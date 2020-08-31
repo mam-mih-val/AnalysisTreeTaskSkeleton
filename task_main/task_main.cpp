@@ -61,10 +61,15 @@ int main(int argc, char ** argv) {
       ++it
       ) {
     cout << "Adding task '" << (*it)->GetName() << "' to the task manager" << std::endl;
+    task_manager.AddTask((*it).operator->());
   }
 
   task_manager.SetOutFileName(output_file_name);
   task_manager.SetOutTreeName(output_tree_name);
+
+  task_manager.Init();
+  task_manager.Run(-1);
+  task_manager.Finish();
 
   return 0;
 }

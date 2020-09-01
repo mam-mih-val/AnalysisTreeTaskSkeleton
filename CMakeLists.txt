@@ -1,12 +1,20 @@
 cmake_minimum_required(VERSION 3.17)
-project(AnalysisTreeSkeleton)
+project(ATTaskSkeleton)
 
 set(CMAKE_CXX_STANDARD 17)
 
+set(ATTaskSkeleton_BUILD_SAMPLE OFF CACHE BOOL "Build sample task")
+
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-include(AnalysisTree)
+
+if (NOT AnalysisTree_FOUND)
+    include(AnalysisTree)
+endif()
 
 
 add_subdirectory(task_main)
-add_subdirectory(sample_task)
+
+if (ATTaskSkeleton_BUILD_SAMPLE)
+    add_subdirectory(sample_task)
+endif()

@@ -1,11 +1,12 @@
 
 set(AnalysisTree_BUILD_TYPE RELEASE CACHE STRING "Build type of the AnalysisTree")
+set(AnalysisTree_GIT_TAG v1.0.1 CACHE STRING "Git tag of the AnalysisTree")
 
 include(FetchContent)
 FetchContent_Declare(
         AnalysisTree
         GIT_REPOSITORY https://github.com/HeavyIonAnalysis/AnalysisTree.git
-        GIT_TAG        v1.0.1
+        GIT_TAG        ${AnalysisTree_GIT_TAG}
 )
 
 FetchContent_GetProperties(AnalysisTree)

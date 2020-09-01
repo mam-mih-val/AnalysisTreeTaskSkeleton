@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <list>
+#include <algorithm>
 
 #include "UserTask.h"
 
@@ -24,8 +25,18 @@ public:
    */
   template<typename T>
   std::size_t RegisterTask() noexcept {
-    tasks_.emplace_back(new T);
-    return tasks_.size() - 1;
+    TaskPtr task(new T);
+
+    auto task_insert_position = std::upper_bound(std::begin(tasks_), std::end(tasks_),
+                                                 task,
+                                                 TaskRegistry::TaskPtrPriorityComparator);
+    tasks_.emplace(task_insert_position, std::move(task));
+    /* reindex tasks */
+    size_t task_order_no = 0;
+    std::for_each(std::begin(tasks_), std::end(tasks_), [&task_order_no] (TaskPtr& t) {
+      t->SetOrderNo(task_order_no++);
+    });
+    return tasks_.size();
   }
 
   auto tasks_begin() { return std::begin(tasks_); }
@@ -37,6 +48,10 @@ private:
   TaskRegistry() = default;
   TaskRegistry(const TaskRegistry&) = default;
   TaskRegistry& operator=(TaskRegistry&) = default;
+
+  static bool TaskPtrPriorityComparator(const TaskPtr& t1, const TaskPtr& t2) {
+    return t1->GetPriority() < t2->GetPriority();
+  }
 
   std::list<TaskPtr> tasks_;
 

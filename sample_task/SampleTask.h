@@ -34,8 +34,10 @@ public:
     centrality_Epsd_field_id = centrality_branch.GetFieldId("Centrality_Epsd");
 
     out_tree_->Branch(out_branch_.c_str(), "AnalysisTree::Container", &ana_event_header_);
-    out_config_->AddBranchConfig(centrality_branch);
+    config_->AddBranchConfig(centrality_branch);
     ana_event_header_->Init(centrality_branch);
+
+    branches_map.emplace("Centrality", ana_event_header_);
   }
 
   void Exec() override {
@@ -61,7 +63,30 @@ private:
   ModuleDetector *psd{nullptr};
   int centrality_Epsd_field_id{-999};
 
-TASK_DEF(FooTask)
+TASK_DEF(FooTask,1)
+};
+
+class BarTask : public UserTask {
+
+public:
+  void PreInit() override {
+    SetInputBranchNames({"Centrality"});
+  }
+
+  void Init(std::map<std::string, void *> &Map) override {
+
+  }
+  void Exec() override {
+
+  }
+  void Finish() override {
+
+  }
+
+private:
+  AnalysisTree::Container *centrality_{nullptr};
+
+TASK_DEF(BarTask, 1);
 };
 
 #endif //ANALYSISTREESKELETON_SAMPLE_TASK_SAMPLETASK_H

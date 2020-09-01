@@ -11,14 +11,14 @@
 class UserTask;
 class TaskRegistry;
 
-#define TASK_DEF(TASK_CLASS) \
+#define TASK_DEF(TASK_CLASS, PRIORITY) \
 private:                          \
-  static std::size_t TASK_ID;     \
+  static std::size_t TASK_NO;     \
 public:                      \
-  std::size_t GetTaskId() const override { return TASK_ID; } \
+  std::size_t GetPriority() const override { return PRIORITY; } \
   std::string GetName() const override { return std::string(#TASK_CLASS); } \
 
 #define TASK_IMPL(TASK_CLASS) \
-std::size_t TASK_CLASS::TASK_ID = TaskRegistry::getInstance().RegisterTask<TASK_CLASS>();
+std::size_t TASK_CLASS::TASK_NO = TaskRegistry::getInstance().RegisterTask<TASK_CLASS>();
 
 #endif //ANALYSISTREESKELETON_TASK_MAIN_TASK_H

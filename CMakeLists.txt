@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(ATTaskSkeleton_BUILD_SAMPLE OFF CACHE BOOL "Build sample task")
 
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 if (NOT AnalysisTree_FOUND)
     include(AnalysisTree)

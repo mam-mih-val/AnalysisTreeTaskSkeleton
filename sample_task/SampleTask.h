@@ -70,7 +70,6 @@ class BarTask : public UserTask {
 
 public:
   void PreInit() override {
-    SetInputBranchNames({"Centrality"});
   }
 
   void Init(std::map<std::string, void *> &Map) override {

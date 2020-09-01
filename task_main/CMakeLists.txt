@@ -2,7 +2,13 @@
 find_package(ROOT REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options)
 
-add_library(task_main STATIC task_main.cpp TaskRegistry.cpp UserTask.cpp Task.h)
+add_library(task_main STATIC
+        task_main.cpp
+        TaskRegistry.cpp
+        TaskRegistry.h
+        UserTask.cpp
+        UserTask.h
+        Task.h)
 target_link_libraries(task_main PUBLIC AnalysisTreeBase AnalysisTreeInfra
         Boost::program_options
         ROOT::Core)

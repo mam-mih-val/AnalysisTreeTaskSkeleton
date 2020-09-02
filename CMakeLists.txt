@@ -13,7 +13,7 @@ if (NOT AnalysisTree_FOUND)
 endif()
 
 
-add_subdirectory(task_main)
+add_subdirectory(at_task)
 
 if (ATTaskSkeleton_BUILD_SAMPLE)
     add_subdirectory(sample_task)

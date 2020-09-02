@@ -7,7 +7,7 @@
 
 #include <TChain.h>
 
-#include "Task.h"
+#include <at_task/Task.h>
 
 #include <core/Detector.hpp>
 #include <core/Module.hpp>

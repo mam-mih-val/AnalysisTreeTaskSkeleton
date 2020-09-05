@@ -40,9 +40,14 @@ public:
   }
 
   auto tasks_begin() { return std::begin(tasks_); }
+  auto begin() { return std::begin(tasks_); }
   auto tasks_end() { return std::end(tasks_); }
+  auto end() { return std::end(tasks_); }
   [[nodiscard]] auto tasks_cbegin() const { return std::cbegin(tasks_); }
+  [[nodiscard]] auto cbegin() const { return std::cbegin(tasks_); }
   [[nodiscard]] auto tasks_cend() const { return std::cend(tasks_); }
+  [[nodiscard]] auto cend() const { return std::cend(tasks_); }
+
 
 private:
   TaskRegistry() = default;

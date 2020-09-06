@@ -16,7 +16,9 @@ public:
 
   virtual boost::program_options::options_description GetBoostOptions() { return {}; };
 
-  virtual void PreInit() {};
+  virtual void PreInit() {}
+  virtual void PostFinish() {}
+
   size_t GetOrderNo() const {
     return order_no_;
   }

@@ -56,7 +56,12 @@ int main(int argc, char ** argv) {
 
   for (auto &task : TaskRegistry::getInstance()) {
     cout << "Adding task '" << task->GetName() << "' to the task manager" << std::endl;
-    task->PreInit();
+    try {
+      task->PreInit();
+    } catch (exception &e) {
+      std::cerr << "Task '" << task->GetName() << "': " << e.what() << std::endl;
+      return 1;
+    }
     task_manager.AddTask(task.operator->());
   }
 
@@ -66,6 +71,10 @@ int main(int argc, char ** argv) {
   task_manager.Init();
   task_manager.Run(n_events);
   task_manager.Finish();
+
+  for (auto &task : TaskRegistry::getInstance()) {
+    task->PostFinish();
+  }
 
   return 0;
 }

@@ -33,9 +33,9 @@ int main(int argc, char ** argv) {
   vector<string> at_filelists;
   vector<string> tree_names;
   bool enable_tasks_count{false};
-  vector<string> enable_tasks;
+  vector<string> enabled_task_names;
   bool disable_tasks_count{false};
-  vector<string> disable_tasks;
+  vector<string> disabled_task_names;
   string output_file_name;
   string output_tree_name;
   int n_events{-1};
@@ -62,8 +62,8 @@ int main(int argc, char ** argv) {
         ("output-tree-name", value(&output_tree_name)->default_value("aTree"),
          "Output tree name")
         ("n-events,n", value(&n_events)->default_value(-1),"Number of events to process (-1 = until the end)")
-        ("enable-tasks", value(&enable_tasks)->multitoken(), ("Enable specific tasks\nTasks: " + tasks_list).c_str())
-        ("disable-tasks", value(&disable_tasks)->multitoken(), ("Disable specific tasks\nTasks: " + tasks_list).c_str());
+        ("enable-tasks", value(&enabled_task_names)->multitoken(), ("Enable specific tasks\nTasks: " + tasks_list).c_str())
+        ("disable-tasks", value(&disabled_task_names)->multitoken(), ("Disable specific tasks\nTasks: " + tasks_list).c_str());
 
     for (auto &task : TaskRegistry::getInstance()) {
       desc.add(task->GetBoostOptions());
@@ -93,14 +93,17 @@ int main(int argc, char ** argv) {
   }
 
   if (enable_tasks_count) {
-    TaskRegistry::getInstance().EnableTasks(enable_tasks);
+    TaskRegistry::getInstance().EnableTasks(enabled_task_names);
   } else if (disable_tasks_count) {
-    TaskRegistry::getInstance().DisableTasks(disable_tasks);
+    TaskRegistry::getInstance().DisableTasks(disabled_task_names);
   }
+
+  std::vector<TaskRegistry::UserTaskPtr> enabled_tasks;
+  TaskRegistry::getInstance().EnabledTasks(enabled_tasks);
 
   TaskManager task_manager(at_filelists, tree_names);
 
-  for (auto &task : TaskRegistry::getInstance()) {
+  for (auto &task : enabled_tasks) {
     cout << "Adding task '" << task->GetName() << "' to the task manager" << std::endl;
     try {
       task->PreInit();
@@ -118,7 +121,7 @@ int main(int argc, char ** argv) {
   task_manager.Run(n_events);
   task_manager.Finish();
 
-  for (auto &task : TaskRegistry::getInstance()) {
+  for (auto &task : enabled_tasks) {
     task->PostFinish();
   }
 

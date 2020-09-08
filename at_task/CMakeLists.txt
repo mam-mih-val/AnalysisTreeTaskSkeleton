@@ -21,6 +21,7 @@ add_custom_command(TARGET at_task POST_BUILD
         COMMAND ${CMAKE_COMMAND} ARGS -E make_directory ${CMAKE_BINARY_DIR}/include/at_task
         COMMAND ${CMAKE_COMMAND} ARGS -E copy ${HEADERS} ${CMAKE_BINARY_DIR}/include/at_task
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS ${HEADERS}
 )
 target_include_directories(at_task
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}

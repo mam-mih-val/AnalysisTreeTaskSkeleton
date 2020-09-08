@@ -8,6 +8,8 @@
 #include <boost/program_options.hpp>
 #include <AnalysisTree/FillTask.hpp>
 
+class TaskRegistry;
+
 class UserTask : public AnalysisTree::FillTask {
 
 public:
@@ -22,11 +24,15 @@ public:
   size_t GetOrderNo() const {
     return order_no_;
   }
-  void SetOrderNo(size_t OrderNo) {
-    order_no_ = OrderNo;
+
+  bool IsEnabled() const {
+    return is_enabled_;
   }
 
 private:
+  friend TaskRegistry;
+
+  bool is_enabled_{true};
   std::size_t order_no_{0};
 };
 

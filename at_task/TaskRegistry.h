@@ -43,7 +43,9 @@ public:
     /* reindex tasks */
     size_t task_order_no = 0;
     std::for_each(std::begin(tasks_), std::end(tasks_), [&task_order_no] (UserTaskPtr& t) {
-      t->SetOrderNo(task_order_no++);
+      t->order_no_ = task_order_no;
+      t->is_enabled_ = true;
+      ++task_order_no;
     });
 
     TaskInfo<T> info;
@@ -52,14 +54,19 @@ public:
     return info;
   }
 
-  auto tasks_begin() { return std::begin(tasks_); }
+  void EnableTasks(const std::vector<std::string> & enabled_task_names = {});
+
+  void DisableTasks(const std::vector<std::string> &disable_task_names = {});
+
   auto begin() { return std::begin(tasks_); }
-  auto tasks_end() { return std::end(tasks_); }
   auto end() { return std::end(tasks_); }
-  [[nodiscard]] auto tasks_cbegin() const { return std::cbegin(tasks_); }
   [[nodiscard]] auto cbegin() const { return std::cbegin(tasks_); }
-  [[nodiscard]] auto tasks_cend() const { return std::cend(tasks_); }
   [[nodiscard]] auto cend() const { return std::cend(tasks_); }
+
+  auto tasks_begin() { return std::begin(tasks_); }
+  auto tasks_end() { return std::end(tasks_); }
+  [[nodiscard]] auto tasks_cbegin() const { return std::cbegin(tasks_); }
+  [[nodiscard]] auto tasks_cend() const { return std::cend(tasks_); }
 
 private:
   TaskRegistry() = default;

@@ -32,7 +32,9 @@ int main(int argc, char ** argv) {
 
   vector<string> at_filelists;
   vector<string> tree_names;
+  bool enable_tasks_count{false};
   vector<string> enable_tasks;
+  bool disable_tasks_count{false};
   vector<string> disable_tasks;
   string output_file_name;
   string output_tree_name;
@@ -70,7 +72,6 @@ int main(int argc, char ** argv) {
     variables_map vm;
 
     store(parse_command_line(argc, argv, desc), vm);
-    conflicting_options(vm, "enable-tasks", "disable-tasks");
 
     if (vm.count("help")) {
       cout << desc << "\n";
@@ -80,11 +81,21 @@ int main(int argc, char ** argv) {
       return 0;
     }
 
+    conflicting_options(vm, "enable-tasks", "disable-tasks");
+    enable_tasks_count = vm.count("enable-tasks");
+    disable_tasks_count = vm.count("disable-tasks");
+
     vm.notify();
   }
   catch (exception &e) {
     cerr << e.what() << endl;
     return 1;
+  }
+
+  if (enable_tasks_count) {
+    TaskRegistry::getInstance().EnableTasks(enable_tasks);
+  } else if (disable_tasks_count) {
+    TaskRegistry::getInstance().DisableTasks(disable_tasks);
   }
 
   TaskManager task_manager(at_filelists, tree_names);

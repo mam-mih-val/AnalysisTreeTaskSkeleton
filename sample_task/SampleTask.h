@@ -23,6 +23,7 @@ public:
     /* insert your pre-init here */
     SetInputBranchNames({"PsdModules", "SimEventHeader"});
     SetOutputBranchName("Centality");
+    is_init = true;
   }
 
   void Init(std::map<std::string, void *> &branches_map) override {
@@ -62,6 +63,7 @@ private:
   AnalysisTree::Container *ana_event_header_{nullptr};
   ModuleDetector *psd{nullptr};
   int centrality_Epsd_field_id{-999};
+  bool is_init{false};
 
 TASK_DEF(FooTask,1)
 };
@@ -70,6 +72,8 @@ class BarTask : public UserTask {
 
 public:
   void PreInit() override {
+    auto foo_task = GetTaskPtr<FooTask>();
+    std::cout << foo_task->GetName() << std::endl;
   }
 
   void Init(std::map<std::string, void *> &Map) override {

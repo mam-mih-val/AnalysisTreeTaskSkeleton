@@ -6,7 +6,7 @@
 #define ANALYSISTREESKELETON_TASK_MAIN_USERTASK_H
 
 #include <boost/program_options.hpp>
-#include <infra/FillTask.hpp>
+#include <AnalysisTree/FillTask.hpp>
 
 class UserTask : public AnalysisTree::FillTask {
 

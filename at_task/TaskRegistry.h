@@ -14,7 +14,16 @@
 class TaskRegistry {
 
 public:
-  typedef std::shared_ptr<UserTask> TaskPtr;
+  template<typename T>
+  using TaskPtrT = std::shared_ptr<T>;
+
+  typedef TaskPtrT<UserTask> UserTaskPtr;
+
+  template <typename T>
+  struct TaskInfo {
+    TaskPtrT<T> ptr;
+    size_t task_no{0};
+  };
 
   static TaskRegistry& getInstance();
 
@@ -24,19 +33,23 @@ public:
    * @return task id
    */
   template<typename T>
-  std::size_t RegisterTask() noexcept {
-    TaskPtr task(new T);
+  TaskInfo<T> RegisterTask() noexcept {
+    TaskPtrT<T> task(new T);
 
     auto task_insert_position = std::upper_bound(std::begin(tasks_), std::end(tasks_),
                                                  task,
                                                  TaskRegistry::TaskPtrPriorityComparator);
-    tasks_.emplace(task_insert_position, std::move(task));
+    tasks_.emplace(task_insert_position, task);
     /* reindex tasks */
     size_t task_order_no = 0;
-    std::for_each(std::begin(tasks_), std::end(tasks_), [&task_order_no] (TaskPtr& t) {
+    std::for_each(std::begin(tasks_), std::end(tasks_), [&task_order_no] (UserTaskPtr& t) {
       t->SetOrderNo(task_order_no++);
     });
-    return tasks_.size();
+
+    TaskInfo<T> info;
+    info.ptr = task;
+    info.task_no = tasks_.size();
+    return info;
   }
 
   auto tasks_begin() { return std::begin(tasks_); }
@@ -48,17 +61,16 @@ public:
   [[nodiscard]] auto tasks_cend() const { return std::cend(tasks_); }
   [[nodiscard]] auto cend() const { return std::cend(tasks_); }
 
-
 private:
   TaskRegistry() = default;
   TaskRegistry(const TaskRegistry&) = default;
   TaskRegistry& operator=(TaskRegistry&) = default;
 
-  static bool TaskPtrPriorityComparator(const TaskPtr& t1, const TaskPtr& t2) {
+  static bool TaskPtrPriorityComparator(const UserTaskPtr& t1, const UserTaskPtr& t2) {
     return t1->GetPriority() < t2->GetPriority();
   }
 
-  std::list<TaskPtr> tasks_;
+  std::list<UserTaskPtr> tasks_;
 
 };
 

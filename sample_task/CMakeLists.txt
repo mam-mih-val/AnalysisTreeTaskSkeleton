@@ -1,2 +1,2 @@
 add_executable(sample_task SampleTask.cpp)
-target_link_libraries(sample_task PUBLIC task_main)
+target_link_libraries(sample_task PUBLIC at_task_main)

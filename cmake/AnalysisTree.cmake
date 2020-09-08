@@ -14,6 +14,7 @@ FetchContent_GetProperties(AnalysisTree)
 if (NOT AnalysisTree_POPULATED)
     FetchContent_Populate(AnalysisTree)
 
+    set(AnalysisTree_BUILD_EXAMPLES OFF)
     # there is no machinery to set variable for nested subdirectory only :C
     set(CMAKE_BUILD_TYPE_SAVED ${CMAKE_BUILD_TYPE})
     set(CMAKE_BUILD_TYPE ${AnalysisTree_BUILD_TYPE})

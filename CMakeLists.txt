@@ -13,6 +13,8 @@ if (NOT AnalysisTree_FOUND)
 endif()
 
 
+set(ATTaskSkeleton_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 add_subdirectory(at_task)
 
 if (ATTaskSkeleton_BUILD_SAMPLE)

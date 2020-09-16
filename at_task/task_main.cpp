@@ -4,7 +4,7 @@
 
 #include <boost/program_options.hpp>
 
-#include <infra/TaskManager.hpp>
+#include <AnalysisTree/TaskManager.hpp>
 
 #include "TaskRegistry.h"
 

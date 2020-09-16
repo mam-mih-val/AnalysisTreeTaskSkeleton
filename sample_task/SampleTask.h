@@ -9,9 +9,9 @@
 
 #include <at_task/Task.h>
 
-#include <core/Detector.hpp>
-#include <core/Module.hpp>
-#include <core/EventHeader.hpp>
+#include <AnalysisTree/Detector.hpp>
+#include <AnalysisTree/Module.hpp>
+#include <AnalysisTree/EventHeader.hpp>
 
 class FooTask : public UserTask {
 public:

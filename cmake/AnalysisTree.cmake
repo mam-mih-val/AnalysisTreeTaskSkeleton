@@ -11,7 +11,7 @@ FetchContent_Declare(
 
 FetchContent_GetProperties(AnalysisTree)
 
-if (NOT AnalysisTree_POPULATED)
+if (NOT analysistree_POPULATED)
     FetchContent_Populate(AnalysisTree)
 
     set(AnalysisTree_BUILD_EXAMPLES OFF)
@@ -21,13 +21,4 @@ if (NOT AnalysisTree_POPULATED)
     add_subdirectory(${analysistree_SOURCE_DIR} ${analysistree_BINARY_DIR})
     set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_SAVED})
 
-    # Viktor, please, use modern CMake in AnalysisTree
-    target_include_directories(AnalysisTreeBase INTERFACE
-            $<BUILD_INTERFACE:${analysistree_SOURCE_DIR}>
-            $<BUILD_INTERFACE:${analysistree_SOURCE_DIR}>/core # nasty
-            )
-    target_include_directories(AnalysisTreeInfra INTERFACE
-            $<BUILD_INTERFACE:${analysistree_SOURCE_DIR}>
-            $<BUILD_INTERFACE:${analysistree_SOURCE_DIR}>/infra
-            )
 endif ()

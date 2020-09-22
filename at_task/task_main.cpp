@@ -57,7 +57,7 @@ int main(int argc, char ** argv) {
         ("tasks", "print registered tasks")
         ("input-filelists,i", value(&at_filelists)->required()->multitoken(), "lists of AT ROOT Files")
         ("tree-names,t", value(&tree_names)->required()->multitoken(), "Tree names")
-        ("output-file-name,o", value(&output_file_name)->default_value("output.root"),
+        ("output-file-name,o", value(&output_file_name)->default_value(""),
          "Output ROOT filename")
         ("output-tree-name", value(&output_tree_name)->default_value("aTree"),
          "Output tree name")

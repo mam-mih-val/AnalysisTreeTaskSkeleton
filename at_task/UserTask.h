@@ -10,7 +10,7 @@
 
 class TaskRegistry;
 
-class UserTask : public AnalysisTree::FillTask {
+class UserTask : virtual public AnalysisTree::FillTask {
 
 public:
   virtual std::string GetName() const { return ""; }

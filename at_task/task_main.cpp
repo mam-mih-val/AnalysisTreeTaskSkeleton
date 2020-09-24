@@ -49,9 +49,9 @@ int main(int argc, char ** argv) {
     tasks_list = tasks_list_stream.str();
   }
 
+  using namespace boost::program_options;
+  options_description desc("Common options");
   try {
-    using namespace boost::program_options;
-    options_description desc("Common options");
     desc.add_options()
         ("help,h", "print usage message")
         ("tasks", "print registered tasks")
@@ -89,6 +89,7 @@ int main(int argc, char ** argv) {
   }
   catch (exception &e) {
     cerr << e.what() << endl;
+    cerr << desc << endl;
     return 1;
   }
 

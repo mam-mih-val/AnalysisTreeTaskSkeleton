@@ -31,3 +31,9 @@ void TaskRegistry::DisableTasks(const std::vector<std::string> &disable_task_nam
   }
 
 }
+void TaskRegistry::EnabledTasks(std::vector<UserTaskPtr> &enabled_tasks) const {
+  enabled_tasks.clear();
+  std::copy_if(cbegin(), cend(), std::back_inserter(enabled_tasks),
+               [] (const UserTaskPtr &t) { return t->IsEnabled(); });
+
+}

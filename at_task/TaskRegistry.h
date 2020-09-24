@@ -69,12 +69,7 @@ public:
   [[nodiscard]] auto tasks_cbegin() const { return std::cbegin(tasks_); }
   [[nodiscard]] auto tasks_cend() const { return std::cend(tasks_); }
 
-  void EnabledTasks(std::vector<UserTaskPtr> &enabled_tasks) const {
-    enabled_tasks.clear();
-    std::copy_if(cbegin(), cend(), std::back_inserter(enabled_tasks),
-                 [] (const UserTaskPtr &t) { return t->IsEnabled(); });
-
-  }
+  void EnabledTasks(std::vector<UserTaskPtr> &enabled_tasks) const;
 
 private:
   TaskRegistry() = default;

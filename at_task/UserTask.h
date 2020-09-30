@@ -10,11 +10,12 @@
 
 class TaskRegistry;
 
-class UserTask : virtual public AnalysisTree::FillTask {
+class UserTask  {
 
 public:
   virtual std::string GetName() const { return ""; }
   virtual size_t GetPriority() const { return 0l; }
+  virtual AnalysisTree::FillTask* FillTaskPtr() = 0;
 
   virtual boost::program_options::options_description GetBoostOptions() { return {}; };
 
@@ -34,6 +35,14 @@ private:
 
   bool is_enabled_{true};
   std::size_t order_no_{0};
+};
+
+class UserFillTask : public UserTask, public AnalysisTree::FillTask {
+public:
+  AnalysisTree::FillTask *FillTaskPtr() final {
+    return this;
+  }
+
 };
 
 

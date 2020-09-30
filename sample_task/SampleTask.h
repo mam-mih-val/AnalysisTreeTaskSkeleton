@@ -13,7 +13,7 @@
 #include <AnalysisTree/Module.hpp>
 #include <AnalysisTree/EventHeader.hpp>
 
-class FooTask : public UserTask {
+class FooTask : public UserFillTask {
 public:
   boost::program_options::options_description GetBoostOptions() override {
     /* insert your options here if need */
@@ -68,7 +68,7 @@ private:
 TASK_DEF(FooTask,1)
 };
 
-class BarTask : public UserTask {
+class BarTask : public UserFillTask {
 
 public:
   void PreInit() override {

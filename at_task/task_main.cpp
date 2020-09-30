@@ -112,7 +112,7 @@ int main(int argc, char ** argv) {
       std::cerr << "Task '" << task->GetName() << "': " << e.what() << std::endl;
       return 1;
     }
-    task_manager.AddTask(task.operator->());
+    task_manager.AddTask(task->FillTaskPtr());
   }
 
   task_manager.SetOutFileName(output_file_name);

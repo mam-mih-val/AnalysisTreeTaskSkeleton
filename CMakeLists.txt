@@ -12,6 +12,8 @@ if (NOT AnalysisTree_FOUND)
     include(AnalysisTree)
 endif()
 
+include(AnalysisTreeCuts)
+
 
 set(ATTaskSkeleton_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 

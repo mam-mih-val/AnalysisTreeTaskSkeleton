@@ -5,6 +5,7 @@
 #include <boost/program_options.hpp>
 
 #include <AnalysisTree/TaskManager.hpp>
+#include <AnalysisTreeCutsRegistry/CutsRegistry.hpp>
 
 #include "TaskRegistry.h"
 
@@ -40,6 +41,13 @@ int main(int argc, char ** argv) {
   string output_tree_name;
   int n_events{-1};
 
+  bool cuts_macro_count{false};
+  string cuts_macro;
+  bool event_cuts_count{false};
+  string event_cuts;
+  vector<string> branch_cuts;
+
+
   std::string tasks_list;
   {
     std::stringstream tasks_list_stream;
@@ -63,7 +71,12 @@ int main(int argc, char ** argv) {
          "Output tree name")
         ("n-events,n", value(&n_events)->default_value(-1),"Number of events to process (-1 = until the end)")
         ("enable-tasks", value(&enabled_task_names)->multitoken(), ("Enable specific tasks\nTasks: " + tasks_list).c_str())
-        ("disable-tasks", value(&disabled_task_names)->multitoken(), ("Disable specific tasks\nTasks: " + tasks_list).c_str());
+        ("disable-tasks", value(&disabled_task_names)->multitoken(), ("Disable specific tasks\nTasks: " + tasks_list).c_str())
+        /* cuts management */
+        ("cuts-macro", value(&cuts_macro), ("Macro with cuts definitions"))
+        ("event-cuts", value(&event_cuts), ("Name of event cuts"))
+        ("branch-cuts", value(&branch_cuts), ("Name(s) of branch cuts"))
+        ;
 
     for (auto &task : TaskRegistry::getInstance()) {
       desc.add(task->GetBoostOptions());
@@ -85,6 +98,9 @@ int main(int argc, char ** argv) {
     enable_tasks_count = vm.count("enable-tasks");
     disable_tasks_count = vm.count("disable-tasks");
 
+    cuts_macro_count = vm.count("cuts-macro");
+    event_cuts_count = vm.count("event-cuts");
+
     vm.notify();
   }
   catch (exception &e) {
@@ -103,6 +119,16 @@ int main(int argc, char ** argv) {
   TaskRegistry::getInstance().EnabledTasks(enabled_tasks);
 
   TaskManager task_manager(at_filelists, tree_names);
+
+  if (cuts_macro_count) {
+    LoadCutsFromFile(cuts_macro.c_str());
+  }
+
+  if (event_cuts_count) {
+    task_manager.SetEventCuts(new Cuts(gCutsRegistry[event_cuts]));
+  }
+
+
 
   for (auto &task : enabled_tasks) {
     cout << "Adding task '" << task->GetName() << "' to the task manager" << std::endl;

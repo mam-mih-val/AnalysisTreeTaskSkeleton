@@ -13,8 +13,11 @@ list(APPEND HEADERS
         Task.h
         )
 
-add_library(at_task STATIC ${SOURCES} ${HEADERS})
-target_link_libraries(at_task  PUBLIC AnalysisTreeBase AnalysisTreeInfra
+add_library(at_task STATIC ${SOURCES} ${HEADERS} StaticTaskRegistry.h)
+target_link_libraries(at_task  PUBLIC
+        AnalysisTreeBase
+        AnalysisTreeInfra
+        AnalysisTreeCutsRegistry
         Boost::program_options
         ROOT::Core)
 

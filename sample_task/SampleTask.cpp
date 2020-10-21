@@ -6,4 +6,3 @@
 
 TASK_IMPL(FooTask)
 TASK_IMPL(BarTask)
-

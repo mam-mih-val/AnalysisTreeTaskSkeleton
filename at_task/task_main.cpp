@@ -125,7 +125,7 @@ int main(int argc, char ** argv) {
   }
 
   if (event_cuts_count) {
-    task_manager.SetEventCuts(new Cuts(gCutsRegistry[event_cuts]));
+    task_manager.SetEventCuts(new Cuts(gCutsRegistry.at(event_cuts)));
   }
 
 

@@ -8,32 +8,55 @@ TaskRegistry &TaskRegistry::getInstance() {
   static TaskRegistry registry;
   return registry;
 }
+
 void TaskRegistry::EnableTasks(const std::vector<std::string> &enabled_task_names) {
-  for (auto &t : tasks_) {
-    /* if empty - enable all */
-    if (enabled_task_names.empty()) t->is_enabled_ = true;
-    else {
-      std::string task_name = t->GetName();
-      t->is_enabled_ = std::any_of(enabled_task_names.begin(), enabled_task_names.end(),
-                                   [task_name] (auto &n) { return task_name == n; });
+  /* if empty - enable all tasks */
+  if (enabled_task_names.empty())
+    enabled_task_names_ = GetTaskNames();
+  else {
+    enabled_task_names_.clear();
+    for (auto &task_name : enabled_task_names) {
+      auto &task = task_singletons_.at(task_name);
+      enabled_task_names_.emplace_back(task_name);
     }
   }
 }
 
 void TaskRegistry::DisableTasks(const std::vector<std::string> &disable_task_names) {
-  for (auto &t : tasks_) {
-    if (disable_task_names.empty()) t->is_enabled_ = true;
-    else {
-      std::string task_name = t->GetName();
-      t->is_enabled_ = !std::any_of(disable_task_names.begin(), disable_task_names.end(),
-                                    [task_name] (auto &n) { return task_name == n; });
+  /* if empty - enable all tasks */
+  auto tasks_to_enable = GetTaskNames();
+  for (auto &task_to_disable : disable_task_names) {
+    auto task_name_pos = std::find(tasks_to_enable.begin(), tasks_to_enable.end(), task_to_disable);
+    if (task_name_pos != tasks_to_enable.end()) {
+      tasks_to_enable.erase(task_name_pos);
+    } else {
+      // TODO warn user
     }
   }
+  enabled_task_names_ = tasks_to_enable;
 
 }
-void TaskRegistry::EnabledTasks(std::vector<UserTaskPtr> &enabled_tasks) const {
-  enabled_tasks.clear();
-  std::copy_if(cbegin(), cend(), std::back_inserter(enabled_tasks),
-               [] (const UserTaskPtr &t) { return t->IsEnabled(); });
-
+void TaskRegistry::LoadEnabledTasks() {
+  UnloadAllTasks();
+  loaded_tasks_.reserve(enabled_task_names_.size());
+  for (auto &task_name : enabled_task_names_) {
+    task_singletons_.at(task_name).Load();
+    auto ptr = task_singletons_.at(task_name).Get();
+    loaded_tasks_.emplace_back(ptr);
+  }
+  std::sort(loaded_tasks_.begin(), loaded_tasks_.end(), TaskPriorityAscComparator);
+  is_loaded = true;
+}
+void TaskRegistry::UnloadAllTasks() {
+  loaded_tasks_.clear();
+  for (auto &t : task_singletons_) {
+    t.second.Reset();
+  }
+  is_loaded = false;
+}
+std::vector<std::string> TaskRegistry::GetTaskNames() {
+  std::vector<std::string> result(task_singletons_.size());
+  std::transform(task_singletons_.begin(), task_singletons_.end(),
+                 std::inserter(result, result.begin()), [] (auto &ele) { return ele.first; });
+  return result;
 }

@@ -51,8 +51,8 @@ int main(int argc, char ** argv) {
   std::string tasks_list;
   {
     std::stringstream tasks_list_stream;
-    for (auto &t : TaskRegistry::getInstance()) {
-      tasks_list_stream << t->GetName() << " ";
+    for (auto &task_name : TaskRegistry::getInstance().GetTaskNames()) {
+      tasks_list_stream << task_name << " ";
     }
     tasks_list = tasks_list_stream.str();
   }
@@ -78,9 +78,9 @@ int main(int argc, char ** argv) {
         ("branch-cuts", value(&branch_cuts), ("Name(s) of branch cuts"))
         ;
 
-    for (auto &task : TaskRegistry::getInstance()) {
-      desc.add(task->GetBoostOptions());
-    }
+//    for (auto &task : TaskRegistry::getInstance()) {
+//      desc.add(task->GetBoostOptions());
+//    }
 
     variables_map vm;
 
@@ -114,9 +114,7 @@ int main(int argc, char ** argv) {
   } else if (disable_tasks_count) {
     TaskRegistry::getInstance().DisableTasks(disabled_task_names);
   }
-
-  std::vector<TaskRegistry::UserTaskPtr> enabled_tasks;
-  TaskRegistry::getInstance().EnabledTasks(enabled_tasks);
+  TaskRegistry::getInstance().LoadEnabledTasks();
 
   TaskManager task_manager(at_filelists, tree_names);
 
@@ -130,7 +128,7 @@ int main(int argc, char ** argv) {
 
 
 
-  for (auto &task : enabled_tasks) {
+  for (auto &task : TaskRegistry::getInstance()) {
     cout << "Adding task '" << task->GetName() << "' to the task manager" << std::endl;
     try {
       task->PreInit();
@@ -148,10 +146,11 @@ int main(int argc, char ** argv) {
   task_manager.Run(n_events);
   task_manager.Finish();
 
-  for (auto &task : enabled_tasks) {
+  for (auto &task : TaskRegistry::getInstance()) {
     task->PostFinish();
   }
 
+  TaskRegistry::getInstance().UnloadAllTasks();
   return 0;
 }
 

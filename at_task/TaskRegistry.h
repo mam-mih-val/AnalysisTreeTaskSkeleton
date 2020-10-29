@@ -55,72 +55,60 @@ public:
 
   static TaskRegistry &getInstance();
 
-  template<typename T>
-  static UserTask *factory() { return new T; }
-
   /**
    * @brief Adds instance of task of type T into the registry
    * @tparam T
    * @return task id
    */
   template<typename T>
-  TaskInfo<T> RegisterTask() noexcept {
-    TaskPtrT<T> task(new T);
-
-    auto task_insert_position = std::upper_bound(std::begin(tasks_), std::end(tasks_),
-                                                 task,
-                                                 TaskRegistry::TaskPtrPriorityComparator);
-    tasks_.emplace(task_insert_position, task);
-    /* reindex tasks */
-    size_t task_order_no = 0;
-    std::for_each(std::begin(tasks_), std::end(tasks_), [&task_order_no](UserTaskPtr &t) {
-      t->order_no_ = task_order_no;
-      t->is_enabled_ = true;
-      ++task_order_no;
-    });
-
-    TaskInfo<T> info;
-    info.ptr = task;
-    info.task_no = tasks_.size();
-
-    return info;
-  }
+  TaskInfo<T> RegisterTask() noexcept {}
 
   template<typename T>
-  int RegisterTask(const char* name) {
-    auto emplace_result = task_singletons_.emplace(std::string(name), TaskSingleton(factory<T>));
-    return emplace_result.second? int(task_singletons_.size()) : -1;
+  int RegisterTask(const char *name) {
+    auto emplace_result = task_singletons_.emplace(std::string(name), TaskSingleton(DefaultTaskFactory < T > ));
+    return emplace_result.second ? int(task_singletons_.size()) : -1;
   }
+
+  std::vector<std::string> GetTaskNames();
 
   void EnableTasks(const std::vector<std::string> &enabled_task_names = {});
 
   void DisableTasks(const std::vector<std::string> &disable_task_names = {});
 
-  auto begin() { return std::begin(tasks_); }
+  void LoadEnabledTasks();
 
-  auto end() { return std::end(tasks_); }
-  [[nodiscard]] auto cbegin() const { return std::cbegin(tasks_); }
-  [[nodiscard]] auto cend() const { return std::cend(tasks_); }
-  auto tasks_begin() { return std::begin(tasks_); }
+  void UnloadAllTasks();
 
-  auto tasks_end() { return std::end(tasks_); }
-  [[nodiscard]] auto tasks_cbegin() const { return std::cbegin(tasks_); }
-  [[nodiscard]] auto tasks_cend() const { return std::cend(tasks_); }
+  auto begin() {
+    CheckLoaded();
+    return loaded_tasks_.begin();
+  }
 
-  void EnabledTasks(std::vector<UserTaskPtr> &enabled_tasks) const;
+  auto end() {
+    CheckLoaded();
+    return loaded_tasks_.end();
+  }
+
 
 private:
   TaskRegistry() = default;
   TaskRegistry(const TaskRegistry &) = default;
   TaskRegistry &operator=(TaskRegistry &) = default;
 
-  static bool TaskPtrPriorityComparator(const UserTaskPtr &t1, const UserTaskPtr &t2) {
+  template<typename T>
+  static UserTask *DefaultTaskFactory() { return new T; }
+
+  static bool TaskPriorityAscComparator(const UserTask *t1, const UserTask *t2) {
     return t1->GetPriority() < t2->GetPriority();
   }
 
-  std::list<UserTaskPtr> tasks_;
+  void CheckLoaded() const { if (!is_loaded) throw std::runtime_error("Tasks are not loaded yet"); }
 
-  std::map<std::string,TaskSingleton> task_singletons_;
+  std::vector<std::string> enabled_task_names_;
+  std::map<std::string, TaskSingleton> task_singletons_;\
+
+  bool is_loaded{false};
+  std::vector<UserTask*> loaded_tasks_;
 
 };
 

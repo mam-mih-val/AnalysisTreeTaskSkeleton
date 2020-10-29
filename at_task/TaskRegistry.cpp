@@ -55,8 +55,8 @@ void TaskRegistry::UnloadAllTasks() {
   is_loaded = false;
 }
 std::vector<std::string> TaskRegistry::GetTaskNames() {
-  std::vector<std::string> result(task_singletons_.size());
+  std::vector<std::string> result;
   std::transform(task_singletons_.begin(), task_singletons_.end(),
-                 std::inserter(result, result.begin()), [] (auto &ele) { return ele.first; });
+                 std::back_inserter(result), [] (auto &ele) { return ele.first; });
   return result;
 }

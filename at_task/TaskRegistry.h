@@ -18,46 +18,45 @@ public:
   template<typename T>
   using TaskPtrT = std::shared_ptr<T>;
 
-  typedef TaskPtrT<UserTask> UserTaskPtr;
-
-  template<typename T>
-  struct TaskInfo {
-    TaskPtrT<T> ptr;
-    size_t task_no{0};
-  };
-
   class TaskSingleton {
 
   public:
-    explicit TaskSingleton(std::function<UserTask *()> factory) : factory(std::move(factory)) {}
+    explicit TaskSingleton(std::function<UserTask *()> factory) : factory_(std::move(factory)) {}
+    TaskSingleton(std::string Name, std::function<UserTask *()> Factory)
+        : name_(std::move(Name)), factory_(std::move(Factory)) {}
 
     void Load() {
-      if (instance) { /* already loaded */
+      if (instance_) { /* already loaded */
         return;
       }
-      instance.reset(factory());
+      instance_.reset(factory_());
     }
     void Reset() {
-      instance.reset();
+      instance_.reset();
     }
     [[nodiscard]] UserTask *Get() const {
-      if (!instance) {
-        throw std::runtime_error("Task must be loaded before getting");
+      if (!instance_) {
+        throw std::runtime_error("Task '" + GetName() + "' must be loaded before getting");
       }
-      return instance.get();
+      return instance_.get();
     }
-    [[nodiscard]] bool IsLoaded() const { return bool(instance); }
+    [[nodiscard]] bool IsLoaded() const { return bool(instance_); }
+    [[nodiscard]] std::string GetName() const { return name_; }
 
   private:
-    std::unique_ptr<UserTask> instance;
-    std::function<UserTask *()> factory;
+    std::string name_;
+    std::function<UserTask *()> factory_;
+
+    std::unique_ptr<UserTask> instance_;
   };
 
   static TaskRegistry &getInstance();
 
   template<typename T>
   int RegisterTask(const char *name) {
-    auto emplace_result = task_singletons_.emplace(std::string(name), TaskSingleton(DefaultTaskFactory < T > ));
+    auto emplace_result = task_singletons_.emplace(
+        std::string(name),
+        TaskSingleton(std::string(name), DefaultTaskFactory < T > ));
     return emplace_result.second ? int(task_singletons_.size()) : -1;
   }
 

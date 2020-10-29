@@ -24,8 +24,8 @@ void conflicting_options(const boost::program_options::variables_map & vm,
 }
 
 void print_tasks() {
-  for (auto& task : TaskRegistry::getInstance()) {
-    cout << "#" << task->GetOrderNo() << " " << task->GetName() << "(prio=" << task->GetPriority() << ")" << std::endl;
+  for (auto& task_name : TaskRegistry::getInstance().GetTaskNames()) {
+    cout << task_name << std::endl;
   }
 }
 

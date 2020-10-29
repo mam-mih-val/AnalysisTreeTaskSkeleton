@@ -4,36 +4,31 @@
 
 #include "TaskRegistry.h"
 
-TaskRegistry &TaskRegistry::getInstance() {
+TaskRegistry &TaskRegistry::Instance() {
   static TaskRegistry registry;
   return registry;
 }
-void TaskRegistry::EnableTasks(const std::vector<std::string> &enabled_task_names) {
-  for (auto &t : tasks_) {
-    /* if empty - enable all */
-    if (enabled_task_names.empty()) t->is_enabled_ = true;
-    else {
-      std::string task_name = t->GetName();
-      t->is_enabled_ = std::any_of(enabled_task_names.begin(), enabled_task_names.end(),
-                                   [task_name] (auto &n) { return task_name == n; });
-    }
-  }
+
+std::vector<std::string> TaskRegistry::GetTaskNames() {
+  std::vector<std::string> result;
+  std::transform(task_singletons_.begin(), task_singletons_.end(),
+                 std::back_inserter(result), [] (auto &ele) { return ele.first; });
+  return result;
 }
 
-void TaskRegistry::DisableTasks(const std::vector<std::string> &disable_task_names) {
-  for (auto &t : tasks_) {
-    if (disable_task_names.empty()) t->is_enabled_ = true;
-    else {
-      std::string task_name = t->GetName();
-      t->is_enabled_ = !std::any_of(disable_task_names.begin(), disable_task_names.end(),
-                                    [task_name] (auto &n) { return task_name == n; });
-    }
+void TaskRegistry::UnloadAllTasks() {
+  for (auto &entry : task_singletons_) {
+    entry.second.Reset();
   }
-
 }
-void TaskRegistry::EnabledTasks(std::vector<UserTaskPtr> &enabled_tasks) const {
-  enabled_tasks.clear();
-  std::copy_if(cbegin(), cend(), std::back_inserter(enabled_tasks),
-               [] (const UserTaskPtr &t) { return t->IsEnabled(); });
-
+void TaskRegistry::LoadAll() {
+  for (auto &t : task_singletons_) {
+    t.second.Load();
+  }
+}
+void TaskRegistry::Unload(const std::string &name) {
+  task_singletons_.at(name).Reset();
+}
+void TaskRegistry::Load(const std::string &name) {
+  task_singletons_.at(name).Load();
 }

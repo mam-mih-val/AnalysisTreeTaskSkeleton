@@ -12,24 +12,28 @@
 using namespace std;
 using namespace AnalysisTree;
 
-void conflicting_options(const boost::program_options::variables_map & vm,
-                         const std::string & opt1, const std::string & opt2)
-{
+void conflicting_options(const boost::program_options::variables_map &vm,
+                         const std::string &opt1, const std::string &opt2) {
   if (vm.count(opt1) && !vm[opt1].defaulted() &&
-      vm.count(opt2) && !vm[opt2].defaulted())
-  {
+      vm.count(opt2) && !vm[opt2].defaulted()) {
     throw std::logic_error(std::string("Conflicting options '") +
         opt1 + "' and '" + opt2 + "'.");
   }
 }
 
 void print_tasks() {
-  for (auto& task : TaskRegistry::getInstance()) {
-    cout << "#" << task->GetOrderNo() << " " << task->GetName() << "(prio=" << task->GetPriority() << ")" << std::endl;
+  for (auto &task_name : TaskRegistry::Instance().GetTaskNames()) {
+    cout << task_name << std::endl;
   }
 }
 
-int main(int argc, char ** argv) {
+inline bool TaskPriorityAscComparator(const UserTask *t1, const UserTask *t2) {
+  return t1->GetPriority() < t2->GetPriority();
+}
+
+int main(int argc, char **argv) {
+
+  TaskRegistry::Instance().LoadAll();
 
   vector<string> at_filelists;
   vector<string> tree_names;
@@ -47,12 +51,11 @@ int main(int argc, char ** argv) {
   string event_cuts;
   vector<string> branch_cuts;
 
-
   std::string tasks_list;
   {
     std::stringstream tasks_list_stream;
-    for (auto &t : TaskRegistry::getInstance()) {
-      tasks_list_stream << t->GetName() << " ";
+    for (auto &task_name : TaskRegistry::Instance().GetTaskNames()) {
+      tasks_list_stream << task_name << " ";
     }
     tasks_list = tasks_list_stream.str();
   }
@@ -69,17 +72,20 @@ int main(int argc, char ** argv) {
          "Output ROOT filename")
         ("output-tree-name", value(&output_tree_name)->default_value("aTree"),
          "Output tree name")
-        ("n-events,n", value(&n_events)->default_value(-1),"Number of events to process (-1 = until the end)")
-        ("enable-tasks", value(&enabled_task_names)->multitoken(), ("Enable specific tasks\nTasks: " + tasks_list).c_str())
-        ("disable-tasks", value(&disabled_task_names)->multitoken(), ("Disable specific tasks\nTasks: " + tasks_list).c_str())
+        ("n-events,n", value(&n_events)->default_value(-1), "Number of events to process (-1 = until the end)")
+        ("enable-tasks",
+         value(&enabled_task_names)->multitoken(),
+         ("Enable specific tasks\nTasks: " + tasks_list).c_str())
+        ("disable-tasks",
+         value(&disabled_task_names)->multitoken(),
+         ("Disable specific tasks\nTasks: " + tasks_list).c_str())
         /* cuts management */
         ("cuts-macro", value(&cuts_macro), ("Macro with cuts definitions"))
         ("event-cuts", value(&event_cuts), ("Name of event cuts"))
-        ("branch-cuts", value(&branch_cuts), ("Name(s) of branch cuts"))
-        ;
+        ("branch-cuts", value(&branch_cuts), ("Name(s) of branch cuts"));
 
-    for (auto &task : TaskRegistry::getInstance()) {
-      desc.add(task->GetBoostOptions());
+    for (auto &task_name : TaskRegistry::Instance().GetTaskNames()) {
+      desc.add(TaskRegistry::Instance().TaskInstance(task_name)->GetBoostOptions());
     }
 
     variables_map vm;
@@ -109,14 +115,19 @@ int main(int argc, char ** argv) {
     return 1;
   }
 
+  std::vector<std::string> tasks_to_use = TaskRegistry::Instance().GetTaskNames();
   if (enable_tasks_count) {
-    TaskRegistry::getInstance().EnableTasks(enabled_task_names);
+    if (!enabled_task_names.empty()) {
+      tasks_to_use = enabled_task_names;
+    }
   } else if (disable_tasks_count) {
-    TaskRegistry::getInstance().DisableTasks(disabled_task_names);
+    for (auto &task_to_disable : disabled_task_names) {
+      auto it = std::find(tasks_to_use.begin(), tasks_to_use.end(), task_to_disable);
+      if (it != tasks_to_use.end()) {
+        tasks_to_use.erase(it);
+      }
+    }
   }
-
-  std::vector<TaskRegistry::UserTaskPtr> enabled_tasks;
-  TaskRegistry::getInstance().EnabledTasks(enabled_tasks);
 
   TaskManager task_manager(at_filelists, tree_names);
 
@@ -128,9 +139,14 @@ int main(int argc, char ** argv) {
     task_manager.SetEventCuts(new Cuts(gCutsRegistry.at(event_cuts)));
   }
 
+  std::vector<UserTask *> task_ptrs;
+  task_ptrs.reserve(tasks_to_use.size());
+  for (auto &name : tasks_to_use) {
+    task_ptrs.push_back(TaskRegistry::Instance().TaskInstance(name));
+  }
+  std::sort(task_ptrs.begin(), task_ptrs.end(), TaskPriorityAscComparator);
 
-
-  for (auto &task : enabled_tasks) {
+  for (auto &task : task_ptrs) {
     cout << "Adding task '" << task->GetName() << "' to the task manager" << std::endl;
     try {
       task->PreInit();
@@ -148,10 +164,11 @@ int main(int argc, char ** argv) {
   task_manager.Run(n_events);
   task_manager.Finish();
 
-  for (auto &task : enabled_tasks) {
+  for (auto task : task_ptrs) {
     task->PostFinish();
   }
 
+  TaskRegistry::Instance().UnloadAllTasks();
   return 0;
 }
 

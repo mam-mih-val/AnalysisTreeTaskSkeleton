@@ -14,21 +14,20 @@ class TaskRegistry;
 #define TASK_DEF(TASK_CLASS, PRIORITY) \
 private:                          \
 public:                      \
-  static TaskRegistry::TaskInfo<TASK_CLASS> TASK_INFO; \
-  std::size_t GetPriority() const override { return PRIORITY; } \
-  std::string GetName() const override { return std::string(#TASK_CLASS); } \
+  static int REGISTRY_FLAG; \
+  static const char* Name() { return #TASK_CLASS; }    \
+  static std::size_t Priority() { return PRIORITY; }   \
+  static TASK_CLASS* Instance() { return dynamic_cast<TASK_CLASS*>(TaskRegistry::Instance().TaskInstance(#TASK_CLASS)); } \
+  std::size_t GetPriority() const override { return TASK_CLASS::Priority(); } \
+  std::string GetName() const override { return TASK_CLASS::Name(); }
 
 #define TASK_IMPL(TASK_CLASS) \
-TaskRegistry::TaskInfo<TASK_CLASS> TASK_CLASS::TASK_INFO = TaskRegistry::getInstance().RegisterTask<TASK_CLASS>();
+int TASK_CLASS::REGISTRY_FLAG = TaskRegistry::Instance().RegisterTask<TASK_CLASS>(TASK_CLASS::Name());
 
 template<typename T>
-auto GetTaskInfo() {
-  return T::TASK_INFO;
-}
-
-template<typename T>
+[[deprecated("Use T::Instance() instead")]]
 auto GetTaskPtr() {
-  return GetTaskInfo<T>().ptr;
+  return T::Instance();
 }
 
 #endif //ANALYSISTREESKELETON_TASK_MAIN_TASK_H

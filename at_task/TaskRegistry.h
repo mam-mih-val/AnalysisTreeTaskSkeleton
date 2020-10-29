@@ -8,79 +8,83 @@
 #include <memory>
 #include <list>
 #include <algorithm>
+#include <utility>
 
 #include "UserTask.h"
 
 class TaskRegistry {
 
 public:
-  template<typename T>
-  using TaskPtrT = std::shared_ptr<T>;
 
-  typedef TaskPtrT<UserTask> UserTaskPtr;
+  class TaskSingleton {
 
-  template <typename T>
-  struct TaskInfo {
-    TaskPtrT<T> ptr;
-    size_t task_no{0};
+  public:
+    explicit TaskSingleton(std::function<UserTask *()> factory) : factory_(std::move(factory)) {}
+    TaskSingleton(std::string Name, std::function<UserTask *()> Factory)
+        : name_(std::move(Name)), factory_(std::move(Factory)) {}
+
+    void Load() {
+      if (instance_) { /* already loaded */
+        return;
+      }
+      instance_.reset(factory_());
+    }
+    void Reset() {
+      instance_.reset();
+    }
+    [[nodiscard]] UserTask *Get() const {
+      if (!instance_) {
+        throw std::runtime_error("Task '" + GetName() + "' must be loaded before getting");
+      }
+      return instance_.get();
+    }
+    [[nodiscard]] bool IsLoaded() const { return bool(instance_); }
+    [[nodiscard]] std::string GetName() const { return name_; }
+
+  private:
+    std::string name_;
+    std::function<UserTask *()> factory_;
+
+    std::unique_ptr<UserTask> instance_;
   };
 
-  static TaskRegistry& getInstance();
+  static TaskRegistry &Instance();
 
-  /**
-   * @brief Adds instance of task of type T into the registry
-   * @tparam T
-   * @return task id
-   */
   template<typename T>
-  TaskInfo<T> RegisterTask() noexcept {
-    TaskPtrT<T> task(new T);
-
-    auto task_insert_position = std::upper_bound(std::begin(tasks_), std::end(tasks_),
-                                                 task,
-                                                 TaskRegistry::TaskPtrPriorityComparator);
-    tasks_.emplace(task_insert_position, task);
-    /* reindex tasks */
-    size_t task_order_no = 0;
-    std::for_each(std::begin(tasks_), std::end(tasks_), [&task_order_no] (UserTaskPtr& t) {
-      t->order_no_ = task_order_no;
-      t->is_enabled_ = true;
-      ++task_order_no;
-    });
-
-    TaskInfo<T> info;
-    info.ptr = task;
-    info.task_no = tasks_.size();
-    return info;
+  int RegisterTask(const char *name) {
+    auto emplace_result = task_singletons_.emplace(
+        std::string(name),
+        TaskSingleton(std::string(name), DefaultTaskFactory < T > ));
+    return emplace_result.second ? int(task_singletons_.size()) : -1;
   }
 
-  void EnableTasks(const std::vector<std::string> & enabled_task_names = {});
+  std::vector<std::string> GetTaskNames();
 
-  void DisableTasks(const std::vector<std::string> &disable_task_names = {});
+  void UnloadAllTasks();
 
-  auto begin() { return std::begin(tasks_); }
+  void LoadAll();
 
-  auto end() { return std::end(tasks_); }
-  [[nodiscard]] auto cbegin() const { return std::cbegin(tasks_); }
-  [[nodiscard]] auto cend() const { return std::cend(tasks_); }
-  auto tasks_begin() { return std::begin(tasks_); }
+  void Load(const std::string& name);
 
-  auto tasks_end() { return std::end(tasks_); }
-  [[nodiscard]] auto tasks_cbegin() const { return std::cbegin(tasks_); }
-  [[nodiscard]] auto tasks_cend() const { return std::cend(tasks_); }
+  void Unload(const std::string& name);
 
-  void EnabledTasks(std::vector<UserTaskPtr> &enabled_tasks) const;
+  [[nodiscard]] UserTask *TaskInstance(const std::string& name) const {
+    return task_singletons_.at(name).Get();
+  }
+
 
 private:
   TaskRegistry() = default;
-  TaskRegistry(const TaskRegistry&) = default;
-  TaskRegistry& operator=(TaskRegistry&) = default;
+  TaskRegistry(const TaskRegistry &) = default;
+  TaskRegistry(TaskRegistry&&) = default;
+  TaskRegistry &operator=(TaskRegistry &) = default;
 
-  static bool TaskPtrPriorityComparator(const UserTaskPtr& t1, const UserTaskPtr& t2) {
-    return t1->GetPriority() < t2->GetPriority();
-  }
+  template<typename T>
+  static UserTask *DefaultTaskFactory() { return new T; }
 
-  std::list<UserTaskPtr> tasks_;
+
+
+  std::map<std::string, TaskSingleton> task_singletons_;
 
 };
 

@@ -55,14 +55,6 @@ public:
 
   static TaskRegistry &getInstance();
 
-  /**
-   * @brief Adds instance of task of type T into the registry
-   * @tparam T
-   * @return task id
-   */
-  template<typename T>
-  TaskInfo<T> RegisterTask() noexcept {}
-
   template<typename T>
   int RegisterTask(const char *name) {
     auto emplace_result = task_singletons_.emplace(std::string(name), TaskSingleton(DefaultTaskFactory < T > ));
@@ -89,6 +81,10 @@ public:
     return loaded_tasks_.end();
   }
 
+  [[nodiscard]] UserTask *GetTaskInstance(const std::string& name) const {
+    return task_singletons_.at(name).Get();
+  }
+
 
 private:
   TaskRegistry() = default;
@@ -105,7 +101,7 @@ private:
   void CheckLoaded() const { if (!is_loaded) throw std::runtime_error("Tasks are not loaded yet"); }
 
   std::vector<std::string> enabled_task_names_;
-  std::map<std::string, TaskSingleton> task_singletons_;\
+  std::map<std::string, TaskSingleton> task_singletons_;
 
   bool is_loaded{false};
   std::vector<UserTask*> loaded_tasks_;

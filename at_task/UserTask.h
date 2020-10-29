@@ -13,6 +13,7 @@ class TaskRegistry;
 class UserTask  {
 
 public:
+  virtual ~UserTask() = default;
   virtual std::string GetName() const { return ""; }
   virtual size_t GetPriority() const { return 0l; }
   virtual AnalysisTree::FillTask* FillTaskPtr() = 0;
@@ -39,6 +40,7 @@ private:
 
 class UserFillTask : public UserTask, public AnalysisTree::FillTask {
 public:
+  virtual ~UserFillTask() = default;
   AnalysisTree::FillTask *FillTaskPtr() final {
     return this;
   }

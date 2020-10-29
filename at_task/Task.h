@@ -17,12 +17,12 @@ public:                      \
   static int REGISTRY_FLAG; \
   static const char* Name() { return #TASK_CLASS; }    \
   static std::size_t Priority() { return PRIORITY; }   \
-  static TASK_CLASS* Instance() { return dynamic_cast<TASK_CLASS*>(TaskRegistry::getInstance().GetTaskInstance(#TASK_CLASS)); } \
+  static TASK_CLASS* Instance() { return dynamic_cast<TASK_CLASS*>(TaskRegistry::Instance().GetTaskInstance(#TASK_CLASS)); } \
   std::size_t GetPriority() const override { return TASK_CLASS::Priority(); } \
   std::string GetName() const override { return TASK_CLASS::Name(); }
 
 #define TASK_IMPL(TASK_CLASS) \
-int TASK_CLASS::REGISTRY_FLAG = TaskRegistry::getInstance().RegisterTask<TASK_CLASS>(TASK_CLASS::Name());
+int TASK_CLASS::REGISTRY_FLAG = TaskRegistry::Instance().RegisterTask<TASK_CLASS>(TASK_CLASS::Name());
 
 template<typename T>
 [[deprecated("Use T::Instance() instead")]]

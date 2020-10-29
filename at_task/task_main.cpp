@@ -24,7 +24,7 @@ void conflicting_options(const boost::program_options::variables_map & vm,
 }
 
 void print_tasks() {
-  for (auto& task_name : TaskRegistry::getInstance().GetTaskNames()) {
+  for (auto& task_name : TaskRegistry::Instance().GetTaskNames()) {
     cout << task_name << std::endl;
   }
 }
@@ -51,7 +51,7 @@ int main(int argc, char ** argv) {
   std::string tasks_list;
   {
     std::stringstream tasks_list_stream;
-    for (auto &task_name : TaskRegistry::getInstance().GetTaskNames()) {
+    for (auto &task_name : TaskRegistry::Instance().GetTaskNames()) {
       tasks_list_stream << task_name << " ";
     }
     tasks_list = tasks_list_stream.str();
@@ -110,11 +110,11 @@ int main(int argc, char ** argv) {
   }
 
   if (enable_tasks_count) {
-    TaskRegistry::getInstance().EnableTasks(enabled_task_names);
+    TaskRegistry::Instance().EnableTasks(enabled_task_names);
   } else if (disable_tasks_count) {
-    TaskRegistry::getInstance().DisableTasks(disabled_task_names);
+    TaskRegistry::Instance().DisableTasks(disabled_task_names);
   }
-  TaskRegistry::getInstance().LoadEnabledTasks();
+  TaskRegistry::Instance().LoadEnabledTasks();
 
   TaskManager task_manager(at_filelists, tree_names);
 
@@ -128,7 +128,7 @@ int main(int argc, char ** argv) {
 
 
 
-  for (auto &task : TaskRegistry::getInstance()) {
+  for (auto &task : TaskRegistry::Instance()) {
     cout << "Adding task '" << task->GetName() << "' to the task manager" << std::endl;
     try {
       task->PreInit();
@@ -146,11 +146,11 @@ int main(int argc, char ** argv) {
   task_manager.Run(n_events);
   task_manager.Finish();
 
-  for (auto &task : TaskRegistry::getInstance()) {
+  for (auto &task : TaskRegistry::Instance()) {
     task->PostFinish();
   }
 
-  TaskRegistry::getInstance().UnloadAllTasks();
+  TaskRegistry::Instance().UnloadAllTasks();
   return 0;
 }
 

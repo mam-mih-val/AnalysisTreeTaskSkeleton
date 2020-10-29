@@ -15,8 +15,6 @@
 class TaskRegistry {
 
 public:
-  template<typename T>
-  using TaskPtrT = std::shared_ptr<T>;
 
   class TaskSingleton {
 
@@ -50,7 +48,7 @@ public:
     std::unique_ptr<UserTask> instance_;
   };
 
-  static TaskRegistry &getInstance();
+  static TaskRegistry &Instance();
 
   template<typename T>
   int RegisterTask(const char *name) {

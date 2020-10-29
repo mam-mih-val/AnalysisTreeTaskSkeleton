@@ -4,7 +4,7 @@
 
 #include "TaskRegistry.h"
 
-TaskRegistry &TaskRegistry::getInstance() {
+TaskRegistry &TaskRegistry::Instance() {
   static TaskRegistry registry;
   return registry;
 }

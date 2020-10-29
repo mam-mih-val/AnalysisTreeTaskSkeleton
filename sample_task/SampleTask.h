@@ -66,7 +66,7 @@ private:
   int centrality_Epsd_field_id{-999};
   bool is_init{false};
 
-TASK_DEF(FooTask,1)
+TASK_DEF(FooTask, 1)
 };
 
 class BarTask : public UserFillTask {

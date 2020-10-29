@@ -15,11 +15,15 @@ class TaskRegistry;
 private:                          \
 public:                      \
   static TaskRegistry::TaskInfo<TASK_CLASS> TASK_INFO; \
+  static int REGISTRY_FLAG; \
+  static const char* Name() { return #TASK_CLASS; }                                     \
   std::size_t GetPriority() const override { return PRIORITY; } \
-  std::string GetName() const override { return std::string(#TASK_CLASS); } \
+  std::string GetName() const override { return TASK_CLASS::Name(); }
 
 #define TASK_IMPL(TASK_CLASS) \
-TaskRegistry::TaskInfo<TASK_CLASS> TASK_CLASS::TASK_INFO = TaskRegistry::getInstance().RegisterTask<TASK_CLASS>();
+TaskRegistry::TaskInfo<TASK_CLASS> TASK_CLASS::TASK_INFO = TaskRegistry::getInstance().RegisterTask<TASK_CLASS>();\
+int TASK_CLASS::REGISTRY_FLAG = TaskRegistry::getInstance().RegisterTask<TASK_CLASS>(TASK_CLASS::Name());
+
 
 template<typename T>
 auto GetTaskInfo() {

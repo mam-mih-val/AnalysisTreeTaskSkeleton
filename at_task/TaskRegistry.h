@@ -8,6 +8,7 @@
 #include <memory>
 #include <list>
 #include <algorithm>
+#include <utility>
 
 #include "UserTask.h"
 
@@ -19,13 +20,43 @@ public:
 
   typedef TaskPtrT<UserTask> UserTaskPtr;
 
-  template <typename T>
+  template<typename T>
   struct TaskInfo {
     TaskPtrT<T> ptr;
     size_t task_no{0};
   };
 
-  static TaskRegistry& getInstance();
+  class TaskSingleton {
+
+  public:
+    explicit TaskSingleton(std::function<UserTask *()> factory) : factory(std::move(factory)) {}
+
+    void Load() {
+      if (instance) { /* already loaded */
+        return;
+      }
+      instance.reset(factory());
+    }
+    void Reset() {
+      instance.reset();
+    }
+    [[nodiscard]] UserTask *Get() const {
+      if (!instance) {
+        throw std::runtime_error("Task must be loaded before getting");
+      }
+      return instance.get();
+    }
+    [[nodiscard]] bool IsLoaded() const { return bool(instance); }
+
+  private:
+    std::unique_ptr<UserTask> instance;
+    std::function<UserTask *()> factory;
+  };
+
+  static TaskRegistry &getInstance();
+
+  template<typename T>
+  static UserTask *factory() { return new T; }
 
   /**
    * @brief Adds instance of task of type T into the registry
@@ -42,7 +73,7 @@ public:
     tasks_.emplace(task_insert_position, task);
     /* reindex tasks */
     size_t task_order_no = 0;
-    std::for_each(std::begin(tasks_), std::end(tasks_), [&task_order_no] (UserTaskPtr& t) {
+    std::for_each(std::begin(tasks_), std::end(tasks_), [&task_order_no](UserTaskPtr &t) {
       t->order_no_ = task_order_no;
       t->is_enabled_ = true;
       ++task_order_no;
@@ -51,10 +82,17 @@ public:
     TaskInfo<T> info;
     info.ptr = task;
     info.task_no = tasks_.size();
+
     return info;
   }
 
-  void EnableTasks(const std::vector<std::string> & enabled_task_names = {});
+  template<typename T>
+  int RegisterTask(const char* name) {
+    auto emplace_result = task_singletons_.emplace(std::string(name), TaskSingleton(factory<T>));
+    return emplace_result.second? int(task_singletons_.size()) : -1;
+  }
+
+  void EnableTasks(const std::vector<std::string> &enabled_task_names = {});
 
   void DisableTasks(const std::vector<std::string> &disable_task_names = {});
 
@@ -73,14 +111,16 @@ public:
 
 private:
   TaskRegistry() = default;
-  TaskRegistry(const TaskRegistry&) = default;
-  TaskRegistry& operator=(TaskRegistry&) = default;
+  TaskRegistry(const TaskRegistry &) = default;
+  TaskRegistry &operator=(TaskRegistry &) = default;
 
-  static bool TaskPtrPriorityComparator(const UserTaskPtr& t1, const UserTaskPtr& t2) {
+  static bool TaskPtrPriorityComparator(const UserTaskPtr &t1, const UserTaskPtr &t2) {
     return t1->GetPriority() < t2->GetPriority();
   }
 
   std::list<UserTaskPtr> tasks_;
+
+  std::map<std::string,TaskSingleton> task_singletons_;
 
 };
 

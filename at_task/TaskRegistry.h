@@ -60,25 +60,15 @@ public:
 
   std::vector<std::string> GetTaskNames();
 
-  void EnableTasks(const std::vector<std::string> &enabled_task_names = {});
-
-  void DisableTasks(const std::vector<std::string> &disable_task_names = {});
-
-  void LoadEnabledTasks();
-
   void UnloadAllTasks();
 
-  auto begin() {
-    CheckLoaded();
-    return loaded_tasks_.begin();
-  }
+  void LoadAll();
 
-  auto end() {
-    CheckLoaded();
-    return loaded_tasks_.end();
-  }
+  void Load(const std::string& name);
 
-  [[nodiscard]] UserTask *GetTaskInstance(const std::string& name) const {
+  void Unload(const std::string& name);
+
+  [[nodiscard]] UserTask *TaskInstance(const std::string& name) const {
     return task_singletons_.at(name).Get();
   }
 
@@ -86,22 +76,15 @@ public:
 private:
   TaskRegistry() = default;
   TaskRegistry(const TaskRegistry &) = default;
+  TaskRegistry(TaskRegistry&&) = default;
   TaskRegistry &operator=(TaskRegistry &) = default;
 
   template<typename T>
   static UserTask *DefaultTaskFactory() { return new T; }
 
-  static bool TaskPriorityAscComparator(const UserTask *t1, const UserTask *t2) {
-    return t1->GetPriority() < t2->GetPriority();
-  }
 
-  void CheckLoaded() const { if (!is_loaded) throw std::runtime_error("Tasks are not loaded yet"); }
 
-  std::vector<std::string> enabled_task_names_;
   std::map<std::string, TaskSingleton> task_singletons_;
-
-  bool is_loaded{false};
-  std::vector<UserTask*> loaded_tasks_;
 
 };
 

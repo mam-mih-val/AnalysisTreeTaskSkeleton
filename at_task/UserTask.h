@@ -51,7 +51,7 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
    * <b>input</b> config during the initialization of the program (usually Init()).
    * Effectively replaces config_->GetBranchConfig("BranchName")->GetFieldId("FieldName")
    * Checks existence of the requested branch
-   * @param variable_name - name of the variable in format BranchName/FieldName"
+   * @param variable_name - name of the variable in format "BranchName/FieldName"
    * @return variable id
    */
   short VarId(const std::string &variable_name) const;
@@ -64,6 +64,12 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
    */
   AnalysisTree::BranchConfig &NewBranch(const std::string &branch_name, AnalysisTree::DetType detector_type);
 
+  /**
+   * @brief This function initialize new variable in the <b>output</b> config.
+   * @tparam T - type of the variable
+   * @param variable_name - name of the variable in format "BranchName/FieldName"
+   * @return variable Id
+   */
   template<typename T>
   short NewVar(const std::string &variable_name) {
     auto &&[branch_name, field_name] = ParseVarName(variable_name);

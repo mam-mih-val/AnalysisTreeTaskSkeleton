@@ -6,7 +6,7 @@
 
 #include <regex>
 
-auto UserFillTask::VarId(const std::string &variable_name) const {
+short UserFillTask::VarId(const std::string &variable_name) const {
   const std::regex re_vname("^(\\w+)/(\\w+)$");
   std::smatch match_results;
   if (std::regex_search(variable_name, match_results, re_vname)) {

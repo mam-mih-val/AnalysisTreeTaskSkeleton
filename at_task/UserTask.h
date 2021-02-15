@@ -46,7 +46,7 @@ public:
   }
 
  protected:
-  auto VarId(const std::string &variable_name) const;
+  short VarId(const std::string &variable_name) const;
 
 };
 

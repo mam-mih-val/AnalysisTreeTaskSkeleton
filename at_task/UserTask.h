@@ -10,13 +10,13 @@
 
 class TaskRegistry;
 
-class UserTask  {
+class UserTask {
 
-public:
+ public:
   virtual ~UserTask() = default;
   virtual std::string GetName() const { return ""; }
   virtual size_t GetPriority() const { return 0l; }
-  virtual AnalysisTree::FillTask* FillTaskPtr() = 0;
+  virtual AnalysisTree::FillTask *FillTaskPtr() = 0;
 
   virtual boost::program_options::options_description GetBoostOptions() { return {}; };
 
@@ -31,7 +31,7 @@ public:
     return is_enabled_;
   }
 
-private:
+ private:
   friend TaskRegistry;
 
   bool is_enabled_{true};
@@ -39,7 +39,7 @@ private:
 };
 
 class UserFillTask : public UserTask, public AnalysisTree::FillTask {
-public:
+ public:
   virtual ~UserFillTask() = default;
   AnalysisTree::FillTask *FillTaskPtr() final {
     return this;
@@ -62,26 +62,20 @@ public:
    * @param detector_type
    * @return
    */
-  AnalysisTree::BranchConfig& NewBranch(const std::string& branch_name, AnalysisTree::DetType detector_type);
+  AnalysisTree::BranchConfig &NewBranch(const std::string &branch_name, AnalysisTree::DetType detector_type);
 
   template<typename T>
-  short NewVar(const std::string& variable_name) {
-    auto &&[branch_name,field_name] = ParseVarName(variable_name);
+  short NewVar(const std::string &variable_name) {
+    auto &&[branch_name, field_name] = ParseVarName(variable_name);
 
-    for (auto &branch : out_config_->GetBranchConfigs()) {
-      if (branch.GetName() == branch_name) {
-        branch.template AddField<T>(field_name);
-        return branch.GetFieldId(field_name);
-      }
-    }
-    throw std::runtime_error("Branch with name " + branch_name + " is not found");
+    auto& branch = out_config_->GetBranchConfig(branch_name);
+    branch.template AddField<T>(field_name);
+    return branch.GetFieldId(field_name);
   }
 
  private:
-  static std::pair<std::string,std::string> ParseVarName(const std::string& variable_name);
+  static std::pair<std::string, std::string> ParseVarName(const std::string &variable_name);
 
 };
-
-
 
 #endif //ANALYSISTREESKELETON_TASK_MAIN_USERTASK_H

@@ -56,6 +56,30 @@ public:
    */
   short VarId(const std::string &variable_name) const;
 
+  /**
+   * @brief This function creates new branch in the out_config_
+   * @param branch_name
+   * @param detector_type
+   * @return
+   */
+  AnalysisTree::BranchConfig& NewBranch(const std::string& branch_name, AnalysisTree::DetType detector_type);
+
+  template<typename T>
+  short NewVar(const std::string& variable_name) {
+    auto &&[branch_name,field_name] = ParseVarName(variable_name);
+
+    for (auto &branch : out_config_->GetBranchConfigs()) {
+      if (branch.GetName() == branch_name) {
+        branch.template AddField<T>(field_name);
+        return branch.GetFieldId(field_name);
+      }
+    }
+    throw std::runtime_error("Branch with name " + branch_name + " is not found");
+  }
+
+ private:
+  static std::pair<std::string,std::string> ParseVarName(const std::string& variable_name);
+
 };
 
 

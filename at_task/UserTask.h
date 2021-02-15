@@ -46,6 +46,14 @@ public:
   }
 
  protected:
+  /**
+   * @brief This function simplifies routine of getting the variable Id from
+   * <b>input</b> config during the initialization of the program (usually Init()).
+   * Effectively replaces config_->GetBranchConfig("BranchName")->GetFieldId("FieldName")
+   * Checks existence of the requested branch
+   * @param variable_name - name of the variable in format BranchName/FieldName"
+   * @return variable id
+   */
   short VarId(const std::string &variable_name) const;
 
 };

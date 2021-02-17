@@ -78,6 +78,24 @@ public:
   }
 
   void Init(std::map<std::string, void *> &Map) override {
+    ReadMap(Map);
+
+    auto vtx_x = Vr("RecEventHeader/vtx_x");
+    auto vtx_x_val = vtx_x.Get<float>();
+    std::cout << vtx_x_val << std::endl;
+
+    auto dca_x = Vr("VtxTracks/dcax");
+//    std::cout << dca_x.Get<float>() << std::endl; /* not implemented */
+
+    for (auto track : Br("VtxTracks")->Loop()) {
+      track.Print();
+      std::cout << track.Get<float>(dca_x) << std::endl;
+    }
+
+
+
+
+
 
   }
   void Exec() override {

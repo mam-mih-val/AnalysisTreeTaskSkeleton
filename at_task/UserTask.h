@@ -7,6 +7,8 @@
 
 #include <boost/program_options.hpp>
 #include <AnalysisTree/FillTask.hpp>
+#include <AnalysisTree/EventHeader.hpp>
+#include <AnalysisTree/Detector.hpp>
 
 class TaskRegistry;
 
@@ -57,7 +59,7 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
    * @return variable id
    */
   VariableIndex VarId(const std::string &variable_name) const;
-  VariableIndex VarId(const std::string &branch_name, const std::string& field_name) const;
+  VariableIndex VarId(const std::string &branch_name, const std::string &field_name) const;
 
   /**
    * @brief This function creates new branch in the out_config_
@@ -77,14 +79,215 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
   short NewVar(const std::string &variable_name) {
     auto &&[branch_name, field_name] = ParseVarName(variable_name);
 
-    auto& branch = out_config_->GetBranchConfig(branch_name);
+    auto &branch = out_config_->GetBranchConfig(branch_name);
     branch.template AddField<T>(field_name);
     return branch.GetFieldId(field_name);
   }
 
- private:
+  void ReadMap(std::map<std::string, void *> &map);
+
+ public:
+
+  struct Variable;
+  struct Branch;
+  struct BranchLoop;
+
+  Branch *Br(const std::string &name) const { return branches_.at(name).get(); }
+  Variable Vr(const std::string &name) const {
+    auto &&[br_name, f_name] = ParseVarName(name);
+
+    Variable v;
+    v.parent_branch = Br(br_name);
+    v.id = v.parent_branch->config.GetFieldId(f_name);
+    v.name = name;
+    return v;
+  }
+
+  struct BranchChannel {
+    BranchChannel(Branch *branch, size_t i_channel) : branch(branch), i_channel(i_channel) {}
+
+    /* Getting value */
+    template<typename T>
+    T Get(const Variable &v) const;
+
+    void Print(std::ostream &os = std::cout) const {
+      os << "Branch " << branch->config.GetName() << " channel #" << i_channel << std::endl;
+    }
+
+    Branch *branch;
+    size_t i_channel;
+  };
+
+  struct BranchLoopIter {
+    BranchLoopIter(Branch *branch, size_t i_channel) : branch(branch), i_channel(i_channel) {}
+
+    bool operator==(const BranchLoopIter &rhs) const {
+      return i_channel == rhs.i_channel &&
+          branch == rhs.branch;
+    }
+    bool operator!=(const BranchLoopIter &rhs) const {
+      return !(rhs == *this);
+    }
+    BranchChannel operator*() const {
+      return BranchChannel(branch, i_channel);
+    }
+    BranchLoopIter &operator++() {
+      i_channel++;
+      return *this;
+    }
+
+    Branch *branch{nullptr};
+    size_t i_channel;
+  };
+
+  struct BranchLoop {
+    explicit BranchLoop(Branch *branch) : branch(branch) {}
+    Branch *branch{nullptr};
+
+    BranchLoopIter begin() const { return branch->ChannelsBegin(); }
+    BranchLoopIter end() const { return branch->ChannelsEnd(); }
+  };
+
+  struct Branch {
+    AnalysisTree::BranchConfig config;
+    AnalysisTree::Configuration *parent_config;
+    void *data{nullptr};
+
+    void InitDataPtr() {
+      ApplyT([this] (auto entity) {
+        if (entity)
+          throw std::runtime_error("Data ptr is already initialized");
+        return new typename std::remove_pointer<decltype(entity)>::type;
+      });
+    }
+
+
+    /* Getting value */
+    template<typename T>
+    T Get(const Variable &v) const;
+
+    size_t size() const;
+
+    /* iterating */
+    BranchLoop Loop() { return BranchLoop(this); };
+    BranchLoopIter ChannelsBegin() { return BranchLoopIter(this, 0); };
+    BranchLoopIter ChannelsEnd() { return BranchLoopIter(this, size()); };
+
+    template<typename Functor>
+    void ApplyT(Functor &&f) {
+      using AnalysisTree::DetType;
+
+      if (config.GetType() == DetType::kParticle) {
+        f((AnalysisTree::Particles *) data);
+      } else if (config.GetType() == DetType::kTrack) {
+        f((AnalysisTree::TrackDetector *) data);
+      } else if (config.GetType() == DetType::kModule) {
+        f((AnalysisTree::ModuleDetector *) data);
+      } else if (config.GetType() == DetType::kHit) {
+        f((AnalysisTree::HitDetector *) data);
+      } else if (config.GetType() == DetType::kEventHeader) {
+        f((AnalysisTree::EventHeader *) data);
+      }
+      /* unreachable */
+    }
+
+    template<typename Functor>
+    void ApplyT(Functor &&f) const {
+      using AnalysisTree::DetType;
+
+      if (config.GetType() == DetType::kParticle) {
+        f((const AnalysisTree::Particles *) data);
+      } else if (config.GetType() == DetType::kTrack) {
+        f((const AnalysisTree::TrackDetector *) data);
+      } else if (config.GetType() == DetType::kModule) {
+        f((const AnalysisTree::ModuleDetector *) data);
+      } else if (config.GetType() == DetType::kHit) {
+        f((const AnalysisTree::HitDetector *) data);
+      } else if (config.GetType() == DetType::kEventHeader) {
+        f((const AnalysisTree::EventHeader *) data);
+      }
+      /* unreachable */
+    }
+
+  };
+
+  struct Variable {
+    std::string name;
+    short id{0};
+    Branch *parent_branch{nullptr};
+
+    template<typename T>
+    T Get() { return parent_branch->template Get<T>(*this); }
+  };
+
   static std::pair<std::string, std::string> ParseVarName(const std::string &variable_name);
+  std::map<std::string, std::unique_ptr<Branch>> branches_;
 
 };
+
+
+
+struct BranchInitDataImpl {
+  explicit BranchInitDataImpl(UserFillTask::Branch *branch) : branch(branch) {}
+  UserFillTask::Branch *branch;
+
+  template<typename T>
+  void operator() (T *) const {
+    if (branch->data)
+      throw std::runtime_error("Branch data is already initialized");
+    branch->data = new T;
+  }
+};
+
+
+
+template<typename T>
+struct BranchFieldGetImpl {
+  BranchFieldGetImpl(T &result, const UserFillTask::Variable &var) : result(result), var(var) {}
+  BranchFieldGetImpl(T &result, const UserFillTask::Variable &var, size_t i_channel)
+      : result(result), var(var), i_channel(i_channel) {}
+
+  template<typename Entity>
+  void Eval(const Entity *entity) { result = entity->GetChannel(i_channel).template GetField<T>(var.id); }
+  void Eval(const AnalysisTree::EventHeader *event_header) { result = event_header->template GetField<T>(var.id); };
+  template<typename Entity>
+  void operator()(const Entity *e) { Eval(e); }
+
+  T &result;
+  const UserFillTask::Variable &var;
+  size_t i_channel{0};
+};
+
+template<typename T>
+T UserFillTask::Branch::Get(const UserFillTask::Variable &v) const {
+  T result;
+  ApplyT(BranchFieldGetImpl<T>(result, v));
+  return result;
+}
+
+template<typename T>
+T UserFillTask::BranchChannel::Get(const UserFillTask::Variable &v) const {
+  T result;
+  branch->template ApplyT(BranchFieldGetImpl<T>(result, v, i_channel));
+  return result;
+}
+
+struct BranchSizeImpl {
+  explicit BranchSizeImpl(size_t &result) : result(result) {}
+  size_t &result;
+
+  template<typename Entity>
+  void Eval(const Entity *e) { result = e->GetNumberOfChannels(); }
+  void Eval(const AnalysisTree::EventHeader& e) { throw std::runtime_error("Not implemented"); }
+
+  template<typename Entity>
+  void operator() (const Entity* e) { Eval(e); }
+};
+inline
+size_t UserFillTask::Branch::size() const {
+  size_t result;
+  ApplyT(BranchSizeImpl(result));
+  return result;
+}
 
 #endif //ANALYSISTREESKELETON_TASK_MAIN_USERTASK_H

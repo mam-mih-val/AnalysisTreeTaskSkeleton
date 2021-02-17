@@ -32,6 +32,7 @@ inline bool TaskPriorityAscComparator(const UserTask *t1, const UserTask *t2) {
 }
 
 int main(int argc, char **argv) {
+  namespace po = boost::program_options;
 
   TaskRegistry::Instance().LoadAll();
 
@@ -60,37 +61,35 @@ int main(int argc, char **argv) {
     tasks_list = tasks_list_stream.str();
   }
 
-  using namespace boost::program_options;
-  options_description desc("Common options");
+  po::options_description desc("Common options");
   try {
     desc.add_options()
         ("help,h", "print usage message")
         ("tasks", "print registered tasks")
-        ("input-filelists,i", value(&at_filelists)->required()->multitoken(), "lists of AT ROOT Files")
-        ("tree-names,t", value(&tree_names)->required()->multitoken(), "Tree names")
-        ("output-file-name,o", value(&output_file_name)->default_value(""),
+        ("input-filelists,i", po::value(&at_filelists)->required()->multitoken(), "lists of AT ROOT Files")
+        ("tree-names,t", po::value(&tree_names)->required()->multitoken(), "Tree names")
+        ("output-file-name,o", po::value(&output_file_name)->default_value(""),
          "Output ROOT filename")
-        ("output-tree-name", value(&output_tree_name)->default_value("aTree"),
+        ("output-tree-name", po::value(&output_tree_name)->default_value("aTree"),
          "Output tree name")
-        ("n-events,n", value(&n_events)->default_value(-1), "Number of events to process (-1 = until the end)")
-        ("enable-tasks",
-         value(&enabled_task_names)->multitoken(),
+        ("n-events,n", po::value(&n_events)->default_value(-1), "Number of events to process (-1 = until the end)")
+        ("enable-tasks", po::value(&enabled_task_names)->multitoken(),
          ("Enable specific tasks\nTasks: " + tasks_list).c_str())
         ("disable-tasks",
-         value(&disabled_task_names)->multitoken(),
+         po::value(&disabled_task_names)->multitoken(),
          ("Disable specific tasks\nTasks: " + tasks_list).c_str())
         /* cuts management */
-        ("cuts-macro", value(&cuts_macro), ("Macro with cuts definitions"))
-        ("event-cuts", value(&event_cuts), ("Name of event cuts"))
-        ("branch-cuts", value(&branch_cuts), ("Name(s) of branch cuts"));
+        ("cuts-macro", po::value(&cuts_macro), ("Macro with cuts definitions"))
+        ("event-cuts", po::value(&event_cuts), ("Name of event cuts"))
+        ("branch-cuts", po::value(&branch_cuts), ("Name(s) of branch cuts"));
 
     for (auto &task_name : TaskRegistry::Instance().GetTaskNames()) {
       desc.add(TaskRegistry::Instance().TaskInstance(task_name)->GetBoostOptions());
     }
 
-    variables_map vm;
+    po::variables_map vm;
 
-    store(parse_command_line(argc, argv, desc), vm);
+    po::store(po::parse_command_line(argc, argv, desc), vm);
 
     if (vm.count("help")) {
       cout << desc << "\n";
@@ -108,12 +107,18 @@ int main(int argc, char **argv) {
     event_cuts_count = vm.count("event-cuts");
 
     vm.notify();
+
+    for (auto &task_name : TaskRegistry::Instance().GetTaskNames()) {
+      TaskRegistry::Instance().TaskInstance(task_name)->ProcessBoostVM(vm);
+    }
   }
   catch (exception &e) {
     cerr << e.what() << endl;
     cerr << desc << endl;
     return 1;
   }
+
+
 
   std::vector<std::string> tasks_to_use = TaskRegistry::Instance().GetTaskNames();
   if (enable_tasks_count) {

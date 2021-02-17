@@ -18,7 +18,8 @@ class UserTask {
   virtual size_t GetPriority() const { return 0l; }
   virtual AnalysisTree::FillTask *FillTaskPtr() = 0;
 
-  virtual boost::program_options::options_description GetBoostOptions() { return {}; };
+  virtual boost::program_options::options_description GetBoostOptions() { return {}; }
+  virtual void ProcessBoostVM(const boost::program_options::variables_map &vm) { (void) vm; }
 
   virtual void PreInit() {}
   virtual void PostFinish() {}

@@ -75,6 +75,7 @@ struct Branch {
   T Get(const Variable &v) const;
 
   size_t size() const;
+  BranchChannel operator[] (size_t i_channel) { return BranchChannel(this, i_channel); }
 
   /* iterating */
   BranchLoop Loop() { return BranchLoop(this); };

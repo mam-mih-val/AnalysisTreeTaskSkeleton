@@ -1,6 +1,6 @@
 
 find_package(ROOT REQUIRED)
-find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(Boost REQUIRED COMPONENTS program_options filesystem)
 
 list(APPEND SOURCES
         TaskRegistry.cpp

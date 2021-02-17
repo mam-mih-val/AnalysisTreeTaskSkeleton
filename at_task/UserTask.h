@@ -9,6 +9,7 @@
 #include <AnalysisTree/FillTask.hpp>
 #include <AnalysisTree/EventHeader.hpp>
 #include <AnalysisTree/Detector.hpp>
+#include <TTree.h>
 
 class TaskRegistry;
 
@@ -92,14 +93,18 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
   struct Branch;
   struct BranchLoop;
 
-  Branch *Br(const std::string &name) const { return branches_.at(name).get(); }
-  Variable Vr(const std::string &name) const {
+  Branch *GetBranch(const std::string &name) const { return branches_in_.at(name).get(); }
+  Variable GetVar(const std::string &name) const {
     auto &&[br_name, f_name] = ParseVarName(name);
 
     Variable v;
-    v.parent_branch = Br(br_name);
+    v.parent_branch = GetBranch(br_name);
     v.id = v.parent_branch->config.GetFieldId(f_name);
     v.name = name;
+
+    if (v.id == AnalysisTree::UndefValueShort)
+      throw std::runtime_error("Field of name '" + v.name + "' not found");
+
     return v;
   }
 
@@ -157,7 +162,14 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
       ApplyT([this] (auto entity) {
         if (entity)
           throw std::runtime_error("Data ptr is already initialized");
-        return new typename std::remove_pointer<decltype(entity)>::type;
+        this->data = new typename std::remove_pointer<decltype(entity)>::type;
+      });
+    }
+
+    void ConnectOutputTree(TTree *tree) {
+      ApplyT([this,tree] (auto entity) {
+        tree->Branch(config.GetName().c_str(),
+                     std::add_pointer_t<decltype(entity)>(&this->data));
       });
     }
 
@@ -212,34 +224,23 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
   };
 
   struct Variable {
+    Branch *parent_branch{nullptr};
     std::string name;
     short id{0};
-    Branch *parent_branch{nullptr};
 
     template<typename T>
     T Get() { return parent_branch->template Get<T>(*this); }
+
+    void Print(std::ostream &os = std::cout) const {
+      os << name << "(id = " << id << ")" << std::endl;
+    }
   };
 
   static std::pair<std::string, std::string> ParseVarName(const std::string &variable_name);
-  std::map<std::string, std::unique_ptr<Branch>> branches_;
+  std::map<std::string, std::unique_ptr<Branch>> branches_in_;
+  std::map<std::string, std::unique_ptr<Branch>> branches_out_;
 
 };
-
-
-
-struct BranchInitDataImpl {
-  explicit BranchInitDataImpl(UserFillTask::Branch *branch) : branch(branch) {}
-  UserFillTask::Branch *branch;
-
-  template<typename T>
-  void operator() (T *) const {
-    if (branch->data)
-      throw std::runtime_error("Branch data is already initialized");
-    branch->data = new T;
-  }
-};
-
-
 
 template<typename T>
 struct BranchFieldGetImpl {

@@ -80,25 +80,28 @@ public:
   void Init(std::map<std::string, void *> &Map) override {
     ReadMap(Map);
 
-    auto vtx_x = Vr("RecEventHeader/vtx_x");
-    auto vtx_x_val = vtx_x.Get<float>();
-    std::cout << vtx_x_val << std::endl;
+    vtx_x = GetVar("RecEventHeader/vtx_x");
+    vtx_x.Print();
 
-    auto dca_x = Vr("VtxTracks/dcax");
-//    std::cout << dca_x.Get<float>() << std::endl; /* not implemented */
+    vtx_tracks = GetBranch("VtxTracks");
 
-    for (auto track : Br("VtxTracks")->Loop()) {
-      track.Print();
-      std::cout << track.Get<float>(dca_x) << std::endl;
-    }
+    dca_x = GetVar("VtxTracks/dcax");
+    dca_x.Print();
 
-
-
-
+    NewBranch("test", AnalysisTree::DetType::kParticle);
 
 
   }
   void Exec() override {
+    auto vtx_x_val = vtx_x.Get<float>();
+    std::cout << vtx_x_val << std::endl;
+
+//    std::cout << dca_x.Get<float>() << std::endl; /* not implemented */
+
+    for (auto track : vtx_tracks->Loop()) {
+      track.Print();
+      std::cout << track.Get<float>(dca_x) << std::endl;
+    }
 
   }
   void Finish() override {
@@ -108,7 +111,12 @@ public:
 private:
   AnalysisTree::Container *centrality_{nullptr};
 
-TASK_DEF(BarTask, 1);
+  Variable vtx_x;
+
+  Branch *vtx_tracks;
+  Variable dca_x;
+
+ TASK_DEF(BarTask, 1);
 };
 
 #endif //ANALYSISTREESKELETON_SAMPLE_TASK_SAMPLETASK_H

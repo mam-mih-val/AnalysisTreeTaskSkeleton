@@ -20,7 +20,23 @@ UserFillTask::VariableIndex UserFillTask::VarId(const std::string &branch_name, 
 
 AnalysisTree::BranchConfig &UserFillTask::NewBranch(const std::string &branch_name,
                                                     AnalysisTree::DetType detector_type) {
-  out_config_->AddBranchConfig(AnalysisTree::BranchConfig(branch_name, detector_type));
+  if (! (out_config_ && out_tree_)) {
+    throw std::runtime_error("Output is not configured");
+  }
+
+  AnalysisTree::BranchConfig branch_config(branch_name, detector_type);
+
+  if (branches_out_.find(branch_name) != branches_out_.end())
+    throw std::runtime_error("Branch of that name already exists");
+
+  auto branch_ptr = std::make_unique<Branch>();
+  branch_ptr->config = branch_config;
+  branch_ptr->parent_config = out_config_;
+  branch_ptr->InitDataPtr();
+  branch_ptr->ConnectOutputTree(out_tree_);
+  branches_out_.emplace(branch_name, std::move(branch_ptr));
+
+  out_config_->AddBranchConfig(branch_config);
   return out_config_->GetBranchConfig(branch_name);
 }
 std::pair<std::string, std::string> UserFillTask::ParseVarName(const std::string &variable_name) {
@@ -50,7 +66,7 @@ void UserFillTask::ReadMap(std::map<std::string, void *>& map) {
     branch->config = config;
     branch->data = data_ptr;
     branch->parent_config = config_;
-    branches_.emplace(branch_name,std::move(branch));
+    branches_in_.emplace(branch_name, std::move(branch));
   }
   std::cout << "Read map done" << std::endl;
 

@@ -111,10 +111,10 @@ public:
 private:
   AnalysisTree::Container *centrality_{nullptr};
 
-  Variable vtx_x;
+  ATI2::Variable vtx_x;
 
-  Branch *vtx_tracks;
-  Variable dca_x;
+  ATI2::Branch *vtx_tracks;
+  ATI2::Variable dca_x;
 
  TASK_DEF(BarTask, 1);
 };

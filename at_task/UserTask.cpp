@@ -9,6 +9,8 @@
 #include <AnalysisTree/EventHeader.hpp>
 #include <AnalysisTree/Detector.hpp>
 
+using namespace ATI2;
+
 UserFillTask::VariableIndex UserFillTask::VarId(const std::string &variable_name) const {
   auto &&[branch_name, field_name] = ParseVarName(variable_name);
   return VarId(branch_name, field_name);
@@ -70,4 +72,18 @@ void UserFillTask::ReadMap(std::map<std::string, void *>& map) {
   }
   std::cout << "Read map done" << std::endl;
 
+}
+
+ATI2::Variable UserFillTask::GetVar(const std::string &name) const {
+  auto &&[br_name, f_name] = ParseVarName(name);
+
+  ATI2::Variable v;
+  v.parent_branch = GetBranch(br_name);
+  v.id = v.parent_branch->config.GetFieldId(f_name);
+  v.name = name;
+
+  if (v.id == AnalysisTree::UndefValueShort)
+    throw std::runtime_error("Field of name '" + v.name + "' not found");
+
+  return v;
 }

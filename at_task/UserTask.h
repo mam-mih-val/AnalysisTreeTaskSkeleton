@@ -46,6 +46,7 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
   }
 
  protected:
+  typedef short VariableIndex;
   /**
    * @brief This function simplifies routine of getting the variable Id from
    * <b>input</b> config during the initialization of the program (usually Init()).
@@ -54,7 +55,8 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
    * @param variable_name - name of the variable in format "BranchName/FieldName"
    * @return variable id
    */
-  short VarId(const std::string &variable_name) const;
+  VariableIndex VarId(const std::string &variable_name) const;
+  VariableIndex VarId(const std::string &branch_name, const std::string& field_name) const;
 
   /**
    * @brief This function creates new branch in the out_config_

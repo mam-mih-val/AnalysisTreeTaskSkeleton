@@ -17,12 +17,12 @@ inline
 double ReadValue(const Variable &v, const Entity& e) {
   using AnalysisTree::Types;
 
-  if (v.field_type == Types::kFloat) {
-    return e.template GetField<float>(v.id);
-  } else if (v.field_type == Types::kInteger) {
-    return e.template GetField<int>(v.id);
-  } else if (v.field_type == Types::kBool) {
-    return e.template GetField<bool>(v.id);
+  if (v.GetFieldType() == Types::kFloat) {
+    return e.template GetField<float>(v.GetId());
+  } else if (v.GetFieldType() == Types::kInteger) {
+    return e.template GetField<int>(v.GetId());
+  } else if (v.GetFieldType() == Types::kBool) {
+    return e.template GetField<bool>(v.GetId());
   }
   /* unreachable */
   assert(false);
@@ -33,14 +33,14 @@ inline
 void SetValue(const Variable& v, Entity&e, double value) {
   using AnalysisTree::Types;
 
-  if (v.field_type == Types::kFloat) {
-    e.template SetField<float>(value, v.id);
+  if (v.GetFieldType() == Types::kFloat) {
+    e.template SetField<float>(value, v.GetId());
     return;
-  } else if (v.field_type == Types::kInteger) {
-    e.template SetField<int>(value, v.id);
+  } else if (v.GetFieldType() == Types::kInteger) {
+    e.template SetField<int>(value, v.GetId());
     return;
-  } else if (v.field_type == Types::kBool) {
-    e.template SetField<bool>(value, v.id);
+  } else if (v.GetFieldType() == Types::kBool) {
+    e.template SetField<bool>(value, v.GetId());
     return;
   }
   /* unreachable */
@@ -151,9 +151,6 @@ double ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
   });
 }
 void BranchChannel::Set(const Variable &v, double value) {
-  if (branch != v.parent_branch) {
-    throw std::runtime_error("Inconsistent branches");
-  }
   branch->CheckMutable();
   ApplyT([&v, value] (auto entity_ptr) -> void {
     Impl::SetValue(v, *entity_ptr, value);

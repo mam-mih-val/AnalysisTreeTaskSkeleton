@@ -16,6 +16,7 @@ struct Variable;
 struct Branch;
 struct BranchLoop;
 
+
 struct BranchChannel {
   BranchChannel(Branch *branch, size_t i_channel);
 
@@ -153,18 +154,41 @@ struct Branch {
 
 };
 
-struct Variable {
-  Branch *parent_branch{nullptr};
-  std::string name;
-  std::string field_name;
 
-  AnalysisTree::Types field_type{AnalysisTree::Types::kNumberOfTypes};
-  short id{0};
 
+
+class Variable {
+
+ public:
   double operator*() const { return parent_branch->Value(*this); }
   void Set(double value) const { parent_branch->Set(*this, value); }
-
   void Print(std::ostream &os = std::cout) const;
+
+  Branch *GetParentBranch() const {
+    return parent_branch;
+  }
+  short GetId() const {
+    return id;
+  }
+  AnalysisTree::Types GetFieldType() const {
+    return field_type;
+  }
+  const std::string &GetName() const {
+    return name;
+  }
+  const std::string &GetFieldName() const {
+    return field_name;
+  }
+ private:
+
+  friend Branch;
+
+  Branch *parent_branch{nullptr};
+
+  short id{0};
+  AnalysisTree::Types field_type{AnalysisTree::Types::kNumberOfTypes};
+  std::string name;
+  std::string field_name;
 };
 
 

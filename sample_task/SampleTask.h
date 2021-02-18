@@ -91,11 +91,13 @@ public:
     NewBranch("test", AnalysisTree::DetType::kParticle);
 
     test_branch = GetOutBranch("test");
+    test_field1 = test_branch->NewVariable<float>("field1");
     vtx_tracks_branch = GetInBranch("VtxTracks");
 
 
   }
   void Exec() override {
+
     auto vtx_x_val = vtx_x.Value<float>();
 //    std::cout << vtx_x_val << std::endl;
 
@@ -122,6 +124,7 @@ private:
   ATI2::Branch *vtx_tracks;
   ATI2::Variable dca_x;
   ATI2::Branch *test_branch;
+  ATI2::Variable test_field1;
   ATI2::Branch *vtx_tracks_branch;
 
  TASK_DEF(BarTask, 1);

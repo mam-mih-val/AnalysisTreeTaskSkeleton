@@ -102,7 +102,11 @@ struct Branch {
   void CheckFrozen() const;
   void CheckMutable() const;
   BranchChannel NewChannel();
+  template <typename T> Variable NewVariable(const std::string &field_name);
 
+
+  template<typename EntityPtr>
+  constexpr static const bool is_iterable_v = std::is_same_v<AnalysisTree::EventHeader, std::remove_const_t<std::remove_pointer_t<EntityPtr>>>;
 
   template<typename Functor>
   auto ApplyT(Functor &&f) {
@@ -161,13 +165,25 @@ struct Variable {
 template<typename T>
 T ATI2::Branch::Value(const ATI2::Variable &v) const {
   return ApplyT([&v](auto entity) -> T {
-    if constexpr (std::is_same_v<AnalysisTree::EventHeader,
-                                 std::remove_const_t<std::remove_pointer_t<decltype(entity)>>>) {
+    if constexpr (is_iterable_v<decltype(entity)>) {
       return entity->template GetField<T>(v.id);
     } else {
       throw std::runtime_error("Value is not implemented for iterable detectors");
     }
   });
+}
+
+template<typename T>
+Variable Branch::NewVariable(const std::string &field_name) {
+  CheckFrozen();
+  config.template AddField<T>(field_name);
+
+  ATI2::Variable v;
+  v.name = config.GetName() + "/" + field_name;
+  v.field_name = field_name;
+  v.parent_branch = this;
+  v.id = config.GetFieldId(field_name);
+  return v;
 }
 
 template<typename T>

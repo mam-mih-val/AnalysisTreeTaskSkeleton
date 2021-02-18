@@ -37,8 +37,7 @@ void Branch::InitDataPtr() {
 
 size_t ATI2::Branch::size() const {
   return ApplyT([](auto entity_ptr) -> size_t {
-    if constexpr (std::is_same_v<AnalysisTree::EventHeader,
-                                 std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>>) {
+    if constexpr (is_iterable_v<decltype(entity_ptr)>) {
       throw std::runtime_error("Size is not implemented for EventHeader variable");
     } else {
       return entity_ptr->GetNumberOfChannels();
@@ -54,8 +53,7 @@ BranchChannel Branch::operator[](size_t i_channel) { return BranchChannel(this, 
 BranchChannel Branch::NewChannel() {
   CheckMutable();
   ApplyT([this](auto entity_ptr) {
-    if constexpr (std::is_same_v<AnalysisTree::EventHeader,
-                                 std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>>) {
+    if constexpr (is_iterable_v<decltype(entity_ptr)>) {
       throw std::runtime_error("Not applicable for EventHeader");
     } else {
       auto channel = entity_ptr->AddChannel();
@@ -74,11 +72,11 @@ void Branch::CheckMutable() const {
     throw std::runtime_error("Branch is not mutable");
 }
 
+
 void BranchChannel::UpdatePointer() {
   if (i_channel < branch->size()) {
     data_ptr = branch->ApplyT([this](auto entity_ptr) -> void * {
-      if constexpr (std::is_same_v<AnalysisTree::EventHeader,
-                                   std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>>) {
+      if constexpr (Branch::is_iterable_v<decltype(entity_ptr)>) {
         throw std::runtime_error("Getting channel of the EventHeader is not implemented");
       } else {
         return &entity_ptr->GetChannel(this->i_channel);

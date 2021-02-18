@@ -83,12 +83,15 @@ public:
     vtx_x = GetVar("RecEventHeader/vtx_x");
     vtx_x.Print();
 
-    vtx_tracks = GetBranch("VtxTracks");
+    vtx_tracks = GetInBranch("VtxTracks");
 
     dca_x = GetVar("VtxTracks/dcax");
     dca_x.Print();
 
     NewBranch("test", AnalysisTree::DetType::kParticle);
+
+    test_branch = GetOutBranch("test");
+    vtx_tracks_branch = GetInBranch("VtxTracks");
 
 
   }
@@ -102,6 +105,8 @@ public:
     for (auto &track : vtx_tracks->Loop()) {
       track.Print();
       std::cout << track.Value<float>(dca_x) << std::endl;
+      auto channel = test_branch->NewChannel();
+      std::cout << test_branch->size() << std::endl;
     }
 
   }
@@ -116,6 +121,8 @@ private:
 
   ATI2::Branch *vtx_tracks;
   ATI2::Variable dca_x;
+  ATI2::Branch *test_branch;
+  ATI2::Branch *vtx_tracks_branch;
 
  TASK_DEF(BarTask, 1);
 };

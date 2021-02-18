@@ -80,6 +80,7 @@ struct Branch {
   bool is_connected_to_input{false};
   bool is_connected_to_output{false};
   bool is_mutable{false};
+  bool is_frozen{false};
 
   void InitDataPtr();
 
@@ -88,7 +89,6 @@ struct Branch {
   /* Getting value */
   template<typename T>
   T Value(const Variable &v) const;
-
   size_t size() const;
   BranchChannel operator[](size_t i_channel);
 
@@ -96,6 +96,13 @@ struct Branch {
   BranchLoop Loop() { return BranchLoop(this); };
   BranchLoopIter ChannelsBegin() { return BranchLoopIter(this, 0); };
   BranchLoopIter ChannelsEnd() { return BranchLoopIter(this, size()); };
+
+  /* Modification */
+  void Freeze(bool freeze = true) { is_frozen = freeze; };
+  void CheckFrozen() const;
+  void CheckMutable() const;
+  BranchChannel NewChannel();
+
 
   template<typename Functor>
   auto ApplyT(Functor &&f) {
@@ -140,6 +147,7 @@ struct Branch {
 struct Variable {
   Branch *parent_branch{nullptr};
   std::string name;
+  std::string field_name;
   short id{0};
 
   template<typename T>

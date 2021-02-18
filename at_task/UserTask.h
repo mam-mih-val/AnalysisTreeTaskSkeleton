@@ -91,7 +91,8 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
 
  public:
 
-  ATI2::Branch *GetBranch(const std::string &name) const { return branches_in_.at(name).get(); }
+  ATI2::Branch *GetInBranch(const std::string &name) const { return branches_in_.at(name).get(); }
+  ATI2::Branch *GetOutBranch(const std::string &name) const { return branches_out_.at(name).get(); }
   ATI2::Variable GetVar(const std::string &name) const;
 
   static std::pair<std::string, std::string> ParseVarName(const std::string &variable_name);

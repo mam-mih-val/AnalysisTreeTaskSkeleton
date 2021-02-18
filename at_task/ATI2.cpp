@@ -40,7 +40,7 @@ size_t ATI2::Branch::size() const {
     if constexpr (std::is_same_v<AnalysisTree::EventHeader,
                                  std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>>) {
       throw std::runtime_error("Size is not implemented for EventHeader variable");
-    } else  {
+    } else {
       return entity_ptr->GetNumberOfChannels();
     }
   });
@@ -51,6 +51,28 @@ BranchChannel::BranchChannel(Branch *branch, size_t i_channel) : branch(branch),
 }
 
 BranchChannel Branch::operator[](size_t i_channel) { return BranchChannel(this, i_channel); }
+BranchChannel Branch::NewChannel() {
+  CheckMutable();
+  ApplyT([this](auto entity_ptr) {
+    if constexpr (std::is_same_v<AnalysisTree::EventHeader,
+                                 std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>>) {
+      throw std::runtime_error("Not applicable for EventHeader");
+    } else {
+      auto channel = entity_ptr->AddChannel();
+      channel->Init(this->config);
+      Freeze();
+    }
+  });
+  return operator[](size() - 1);
+}
+void Branch::CheckFrozen() const {
+  if (is_frozen)
+    throw std::runtime_error("Branch is frozen");
+}
+void Branch::CheckMutable() const {
+  if (!is_mutable)
+    throw std::runtime_error("Branch is not mutable");
+}
 
 void BranchChannel::UpdatePointer() {
   if (i_channel < branch->size()) {

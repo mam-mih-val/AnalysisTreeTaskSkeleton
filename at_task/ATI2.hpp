@@ -17,7 +17,8 @@ struct Branch;
 struct BranchLoop;
 
 
-struct BranchChannel {
+class BranchChannel {
+ public:
   BranchChannel(Branch *branch, size_t i_channel);
 
   /* Getting value */
@@ -36,6 +37,7 @@ struct BranchChannel {
   void UpdatePointer();
   void UpdateChannel(size_t new_channel);
 
+ private:
   void *data_ptr{nullptr};
   Branch *branch;
   size_t i_channel;
@@ -153,7 +155,6 @@ struct Branch {
   }
 
 };
-
 
 
 

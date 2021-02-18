@@ -180,7 +180,7 @@ class Variable {
     return field_name;
   }
  private:
-
+//  Variable() = default;
   friend Branch;
 
   Branch *parent_branch{nullptr};

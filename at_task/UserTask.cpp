@@ -36,6 +36,7 @@ AnalysisTree::BranchConfig &UserFillTask::NewBranch(const std::string &branch_na
   branch_ptr->parent_config = out_config_;
   branch_ptr->InitDataPtr();
   branch_ptr->ConnectOutputTree(out_tree_);
+  branch_ptr->is_mutable = true;
   branches_out_.emplace(branch_name, std::move(branch_ptr));
 
   out_config_->AddBranchConfig(branch_config);
@@ -68,6 +69,8 @@ void UserFillTask::ReadMap(std::map<std::string, void *>& map) {
     branch->config = config;
     branch->data = data_ptr;
     branch->parent_config = config_;
+    branch->is_connected_to_input = true;
+    branch->is_mutable = true;
     branches_in_.emplace(branch_name, std::move(branch));
   }
   std::cout << "Read map done" << std::endl;

@@ -16,10 +16,8 @@ struct Variable;
 struct Branch;
 struct BranchLoop;
 
-
-
 struct BranchChannel {
-  BranchChannel(Branch *branch, size_t i_channel) : branch(branch), i_channel(i_channel) {}
+  BranchChannel(Branch *branch, size_t i_channel);
 
   /* Getting value */
   template<typename T>
@@ -27,12 +25,19 @@ struct BranchChannel {
 
   void Print(std::ostream &os = std::cout) const;
 
+  void UpdatePointer();
+  void ResetPointer() { data_ptr = nullptr; }
+
+  const void *data_ptr;
   Branch *branch;
   size_t i_channel;
 };
 
 struct BranchLoopIter {
-  BranchLoopIter(Branch *branch, size_t i_channel) : branch(branch), i_channel(i_channel) {}
+  BranchLoopIter(Branch *branch, size_t i_channel) : branch(branch),
+                                                     i_channel(i_channel),
+                                                     current_channel(std::make_unique<BranchChannel>(branch,
+                                                                                                     i_channel)) {}
 
   bool operator==(const BranchLoopIter &rhs) const {
     return i_channel == rhs.i_channel &&
@@ -42,14 +47,15 @@ struct BranchLoopIter {
     return !(rhs == *this);
   }
   BranchChannel operator*() const {
-    return BranchChannel(branch, i_channel);
+    return current_channel.operator*();
   }
-  BranchLoopIter &operator++() {
-    i_channel++;
-    return *this;
+  BranchChannel &operator*() {
+    return current_channel.operator*();
   }
+  BranchLoopIter &operator++();
 
-  Branch *branch{nullptr};
+  std::unique_ptr<BranchChannel> current_channel;
+  Branch *branch;
   size_t i_channel;
 };
 
@@ -65,6 +71,9 @@ struct Branch {
   AnalysisTree::BranchConfig config;
   AnalysisTree::Configuration *parent_config;
   void *data{nullptr};
+  bool is_connected_to_input{false};
+  bool is_connected_to_output{false};
+  bool is_mutable{false};
 
   void InitDataPtr();
 
@@ -75,7 +84,7 @@ struct Branch {
   T Get(const Variable &v) const;
 
   size_t size() const;
-  BranchChannel operator[] (size_t i_channel) { return BranchChannel(this, i_channel); }
+  BranchChannel operator[](size_t i_channel);
 
   /* iterating */
   BranchLoop Loop() { return BranchLoop(this); };
@@ -83,39 +92,41 @@ struct Branch {
   BranchLoopIter ChannelsEnd() { return BranchLoopIter(this, size()); };
 
   template<typename Functor>
-  void ApplyT(Functor &&f) {
+  auto ApplyT(Functor &&f) {
     using AnalysisTree::DetType;
 
     if (config.GetType() == DetType::kParticle) {
-      f((AnalysisTree::Particles *) data);
+      return f((AnalysisTree::Particles *) data);
     } else if (config.GetType() == DetType::kTrack) {
-      f((AnalysisTree::TrackDetector *) data);
+      return f((AnalysisTree::TrackDetector *) data);
     } else if (config.GetType() == DetType::kModule) {
-      f((AnalysisTree::ModuleDetector *) data);
+      return f((AnalysisTree::ModuleDetector *) data);
     } else if (config.GetType() == DetType::kHit) {
-      f((AnalysisTree::HitDetector *) data);
+      return f((AnalysisTree::HitDetector *) data);
     } else if (config.GetType() == DetType::kEventHeader) {
-      f((AnalysisTree::EventHeader *) data);
+      return f((AnalysisTree::EventHeader *) data);
     }
     /* unreachable */
+    assert(false);
   }
 
   template<typename Functor>
-  void ApplyT(Functor &&f) const {
+  auto ApplyT(Functor &&f) const {
     using AnalysisTree::DetType;
 
     if (config.GetType() == DetType::kParticle) {
-      f((const AnalysisTree::Particles *) data);
+      return f((const AnalysisTree::Particles *) data);
     } else if (config.GetType() == DetType::kTrack) {
-      f((const AnalysisTree::TrackDetector *) data);
+      return f((const AnalysisTree::TrackDetector *) data);
     } else if (config.GetType() == DetType::kModule) {
-      f((const AnalysisTree::ModuleDetector *) data);
+      return f((const AnalysisTree::ModuleDetector *) data);
     } else if (config.GetType() == DetType::kHit) {
-      f((const AnalysisTree::HitDetector *) data);
+      return f((const AnalysisTree::HitDetector *) data);
     } else if (config.GetType() == DetType::kEventHeader) {
-      f((const AnalysisTree::EventHeader *) data);
+      return f((const AnalysisTree::EventHeader *) data);
     }
     /* unreachable */
+    assert(false);
   }
 
 };
@@ -134,35 +145,23 @@ struct Variable {
 };
 
 template<typename T>
-struct BranchFieldGetImpl {
-  BranchFieldGetImpl(T &result, const ATI2::Variable &var) : result(result), var(var) {}
-  BranchFieldGetImpl(T &result, const ATI2::Variable &var, size_t i_channel)
-      : result(result), var(var), i_channel(i_channel) {}
-
-  template<typename Entity>
-  void Eval(const Entity *entity) { result = entity->GetChannel(i_channel).template GetField<T>(var.id); }
-  void Eval(const AnalysisTree::EventHeader *event_header) { result = event_header->template GetField<T>(var.id); };
-  template<typename Entity>
-  void operator()(const Entity *e) { Eval(e); }
-
-  T &result;
-  const ATI2::Variable &var;
-  size_t i_channel{0};
-};
-
-template<typename T>
 T ATI2::Branch::Get(const ATI2::Variable &v) const {
-  T result;
-  ApplyT(BranchFieldGetImpl<T>(result, v));
-  return result;
+  return ApplyT([&v](auto entity) -> T {
+    if constexpr (std::is_same_v<AnalysisTree::EventHeader,
+                                 std::remove_const_t<std::remove_pointer_t<decltype(entity)>>>) {
+      return entity->template GetField<T>(v.id);
+    }
+    throw std::runtime_error("Get is not implemented for iterable detectors");
+  });
 }
 
 template<typename T>
 T ATI2::BranchChannel::Get(const ATI2::Variable &v) const {
-  T result;
-  branch->template ApplyT(BranchFieldGetImpl<T>(result, v, i_channel));
-  return result;
+  return branch->template ApplyT([this, &v](auto entity_ptr) -> T {
+    return entity_ptr->GetChannel(this->i_channel).template GetField<T>(v.id);
+  });
 }
+
 
 } // namespace ATI2
 

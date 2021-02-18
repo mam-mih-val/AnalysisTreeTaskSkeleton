@@ -93,7 +93,7 @@ public:
 
   }
   void Exec() override {
-    auto vtx_x_val = vtx_x.Get<float>();
+    auto vtx_x_val = vtx_x.Value<float>();
 //    std::cout << vtx_x_val << std::endl;
 
 //    std::cout << dca_x.Get<float>() << std::endl; /* not implemented */
@@ -101,7 +101,7 @@ public:
 
     for (auto &track : vtx_tracks->Loop()) {
       track.Print();
-      std::cout << track.Get<float>(dca_x) << std::endl;
+      std::cout << track.Value<float>(dca_x) << std::endl;
     }
 
   }

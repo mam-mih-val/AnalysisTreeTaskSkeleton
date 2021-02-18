@@ -21,7 +21,7 @@ struct BranchChannel {
 
   /* Getting value */
   template<typename T>
-  T Get(const Variable &v) const;
+  T Value(const Variable &v) const;
 
   void Print(std::ostream &os = std::cout) const;
 
@@ -31,7 +31,7 @@ struct BranchChannel {
   }
   void UpdatePointer();
 
-//  void *Data() { return data_ptr; }
+  void *Data() { return data_ptr; }
   const void *Data() const { return data_ptr; }
 
   void *data_ptr{nullptr};
@@ -87,7 +87,7 @@ struct Branch {
 
   /* Getting value */
   template<typename T>
-  T Get(const Variable &v) const;
+  T Value(const Variable &v) const;
 
   size_t size() const;
   BranchChannel operator[](size_t i_channel);
@@ -143,7 +143,7 @@ struct Variable {
   short id{0};
 
   template<typename T>
-  T Get() { return parent_branch->template Get<T>(*this); }
+  T Value() const { return parent_branch->template Value<T>(*this); }
 
   void Print(std::ostream &os = std::cout) const {
     os << name << "(id = " << id << ")" << std::endl;
@@ -151,19 +151,19 @@ struct Variable {
 };
 
 template<typename T>
-T ATI2::Branch::Get(const ATI2::Variable &v) const {
+T ATI2::Branch::Value(const ATI2::Variable &v) const {
   return ApplyT([&v](auto entity) -> T {
     if constexpr (std::is_same_v<AnalysisTree::EventHeader,
                                  std::remove_const_t<std::remove_pointer_t<decltype(entity)>>>) {
       return entity->template GetField<T>(v.id);
     } else {
-      throw std::runtime_error("Get is not implemented for iterable detectors");
+      throw std::runtime_error("Value is not implemented for iterable detectors");
     }
   });
 }
 
 template<typename T>
-T ATI2::BranchChannel::Get(const ATI2::Variable &v) const {
+T ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
   return branch->template ApplyT([this, &v](auto entity_ptr) -> T {
     return entity_ptr->GetChannel(this->i_channel).template GetField<T>(v.id);
   });

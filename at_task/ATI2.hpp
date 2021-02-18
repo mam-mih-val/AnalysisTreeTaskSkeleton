@@ -25,10 +25,16 @@ struct BranchChannel {
 
   void Print(std::ostream &os = std::cout) const;
 
+  void UpdateChannel(size_t new_channel) {
+    i_channel = new_channel;
+    UpdatePointer();
+  }
   void UpdatePointer();
-  void ResetPointer() { data_ptr = nullptr; }
 
-  const void *data_ptr;
+//  void *Data() { return data_ptr; }
+  const void *Data() const { return data_ptr; }
+
+  void *data_ptr{nullptr};
   Branch *branch;
   size_t i_channel;
 };
@@ -150,8 +156,9 @@ T ATI2::Branch::Get(const ATI2::Variable &v) const {
     if constexpr (std::is_same_v<AnalysisTree::EventHeader,
                                  std::remove_const_t<std::remove_pointer_t<decltype(entity)>>>) {
       return entity->template GetField<T>(v.id);
+    } else {
+      throw std::runtime_error("Get is not implemented for iterable detectors");
     }
-    throw std::runtime_error("Get is not implemented for iterable detectors");
   });
 }
 
@@ -161,7 +168,6 @@ T ATI2::BranchChannel::Get(const ATI2::Variable &v) const {
     return entity_ptr->GetChannel(this->i_channel).template GetField<T>(v.id);
   });
 }
-
 
 } // namespace ATI2
 

@@ -40,8 +40,9 @@ size_t ATI2::Branch::size() const {
     if constexpr (std::is_same_v<AnalysisTree::EventHeader,
                                  std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>>) {
       throw std::runtime_error("Size is not implemented for EventHeader variable");
+    } else  {
+      return entity_ptr->GetNumberOfChannels();
     }
-    return entity_ptr->GetNumberOfChannels();
   });
 }
 
@@ -53,8 +54,13 @@ BranchChannel Branch::operator[](size_t i_channel) { return BranchChannel(this, 
 
 void BranchChannel::UpdatePointer() {
   if (i_channel < branch->size()) {
-    data_ptr = branch->ApplyT([this](const auto entity_ptr) -> const void * {
-      return &entity_ptr->GetChannel(this->i_channel);
+    data_ptr = branch->ApplyT([this](auto entity_ptr) -> void * {
+      if constexpr (std::is_same_v<AnalysisTree::EventHeader,
+                                   std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>>) {
+        throw std::runtime_error("Getting channel of the EventHeader is not implemented");
+      } else {
+        return &entity_ptr->GetChannel(this->i_channel);
+      }
     });
   } else {
     data_ptr = nullptr;
@@ -62,7 +68,6 @@ void BranchChannel::UpdatePointer() {
 }
 BranchLoopIter &BranchLoopIter::operator++() {
   i_channel++;
-  current_channel->i_channel = i_channel;
-  current_channel->UpdatePointer();
+  current_channel->UpdateChannel(i_channel);
   return *this;
 }

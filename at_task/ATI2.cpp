@@ -72,7 +72,10 @@ void Branch::CheckMutable() const {
     throw std::runtime_error("Branch is not mutable");
 }
 
-
+void BranchChannel::UpdateChannel(size_t new_channel) {
+  i_channel = new_channel;
+  UpdatePointer();
+}
 void BranchChannel::UpdatePointer() {
   if (i_channel < branch->size()) {
     data_ptr = branch->ApplyT([this](auto entity_ptr) -> void * {
@@ -90,4 +93,8 @@ BranchLoopIter &BranchLoopIter::operator++() {
   i_channel++;
   current_channel->UpdateChannel(i_channel);
   return *this;
+}
+
+void Variable::Print(std::ostream &os) const {
+  os << name << "(id = " << id << ")" << std::endl;
 }

@@ -21,6 +21,8 @@ struct BranchChannel {
 
   /* Getting value */
   double Value(const Variable &v) const;
+  inline double operator[] (const Variable &v) const { return Value(v); }
+  void Set(const Variable& v, double value);
   void *Data() { return data_ptr; }
   const void *Data() const { return data_ptr; }
 
@@ -88,6 +90,8 @@ struct Branch {
 
   /* Getting value */
   double Value(const Variable &v) const;
+  inline double operator[] (const Variable&v) const { return Value(v); }
+  void Set(const Variable& v, double value);
 
   size_t size() const;
   BranchChannel operator[](size_t i_channel);
@@ -158,6 +162,7 @@ struct Variable {
   short id{0};
 
   double operator*() const { return parent_branch->Value(*this); }
+  void Set(double value) const { parent_branch->Set(*this, value); }
 
   void Print(std::ostream &os = std::cout) const;
 };
@@ -177,7 +182,6 @@ Variable Branch::NewVariable(const std::string &field_name) {
   v.field_type = config.GetFieldType(field_name);
   return v;
 }
-
 
 
 template<typename Functor>
@@ -209,6 +213,7 @@ auto BranchChannel::ApplyT(Functor &&functor) const {
   }
   assert(false);
 }
+
 
 } // namespace ATI2
 

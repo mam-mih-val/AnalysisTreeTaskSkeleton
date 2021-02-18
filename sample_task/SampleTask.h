@@ -101,14 +101,16 @@ public:
     auto vtx_x_val = *vtx_x;
     std::cout << vtx_x_val << std::endl;
 
+
+
 //    std::cout << dca_x.Get<float>() << std::endl; /* not implemented */
 //    GetBranch("RecEventHeader")->size(); /* not implemented */
 
     for (auto &track : vtx_tracks->Loop()) {
       track.Print();
-      std::cout << track.Value(dca_x) << std::endl;
+      std::cout << track[dca_x] << std::endl;
       auto channel = test_branch->NewChannel();
-      std::cout << test_branch->size() << std::endl;
+      channel.Set(test_field1, 10.);
     }
 
   }

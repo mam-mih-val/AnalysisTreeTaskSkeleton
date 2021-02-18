@@ -28,6 +28,25 @@ double ReadValue(const Variable &v, const Entity& e) {
   assert(false);
 }
 
+template<typename Entity>
+inline
+void SetValue(const Variable& v, Entity&e, double value) {
+  using AnalysisTree::Types;
+
+  if (v.field_type == Types::kFloat) {
+    e.template SetField<float>(value, v.id);
+    return;
+  } else if (v.field_type == Types::kInteger) {
+    e.template SetField<int>(value, v.id);
+    return;
+  } else if (v.field_type == Types::kBool) {
+    e.template SetField<bool>(value, v.id);
+    return;
+  }
+  /* unreachable */
+  assert(false);
+}
+
 } // namespace Impl
 
 
@@ -115,9 +134,29 @@ double Branch::Value(const Variable &v) const {
   });
 }
 
+void Branch::Set(const Variable &v, double value) {
+  CheckMutable();
+  ApplyT([&v, value] (auto entity_ptr) -> void {
+    if constexpr (is_event_header_v< decltype(entity_ptr)>) {
+      Impl::SetValue(v, *entity_ptr, value);
+    } else {
+      throw std::runtime_error("Not implemented for Detector<...>");
+    }
+  });
+}
+
 double ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
   return ApplyT([this, &v](auto entity_ptr) -> double {
     return Impl::ReadValue(v, *entity_ptr);
+  });
+}
+void BranchChannel::Set(const Variable &v, double value) {
+  if (branch != v.parent_branch) {
+    throw std::runtime_error("Inconsistent branches");
+  }
+  branch->CheckMutable();
+  ApplyT([&v, value] (auto entity_ptr) -> void {
+    Impl::SetValue(v, *entity_ptr, value);
   });
 }
 

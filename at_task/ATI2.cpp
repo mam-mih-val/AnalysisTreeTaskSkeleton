@@ -10,6 +10,27 @@
 
 using namespace ATI2;
 
+namespace Impl {
+
+template<typename Entity>
+inline
+double ReadValue(const Variable &v, const Entity& e) {
+  using AnalysisTree::Types;
+
+  if (v.field_type == Types::kFloat) {
+    return e.template GetField<float>(v.id);
+  } else if (v.field_type == Types::kInteger) {
+    return e.template GetField<int>(v.id);
+  } else if (v.field_type == Types::kBool) {
+    return e.template GetField<bool>(v.id);
+  }
+  /* unreachable */
+  assert(false);
+}
+
+} // namespace Impl
+
+
 void BranchChannel::Print(std::ostream &os) const {
   os << "Branch " << branch->config.GetName() << " channel #" << i_channel << std::endl;
 }
@@ -17,13 +38,25 @@ void BranchChannel::Print(std::ostream &os) const {
 BranchLoopIter BranchLoop::begin() const { return branch->ChannelsBegin(); }
 BranchLoopIter BranchLoop::end() const { return branch->ChannelsEnd(); }
 
+Variable Branch::GetVar(const std::string &field_name) {
+  ATI2::Variable v;
+  v.parent_branch = this;
+  v.id = v.parent_branch->config.GetFieldId(field_name);
+  v.name = this->config.GetName() + "/" + field_name;
+  v.field_name = field_name;
+  v.field_type = config.GetFieldType(field_name);
+
+  if (v.id == AnalysisTree::UndefValueShort)
+    throw std::runtime_error("Field of name '" + v.name + "' not found");
+  return v;
+}
 void Branch::ConnectOutputTree(TTree *tree) {
   is_connected_to_output = ApplyT([this, tree](auto entity) -> bool {
     if (!tree)
       return false;
     auto new_tree_branch_ptr = tree->Branch(config.GetName().c_str(),
                                             std::add_pointer_t<decltype(entity)>(&this->data));
-    return (bool) new_tree_branch_ptr;
+    return bool(new_tree_branch_ptr);
   });
 }
 
@@ -37,7 +70,7 @@ void Branch::InitDataPtr() {
 
 size_t ATI2::Branch::size() const {
   return ApplyT([](auto entity_ptr) -> size_t {
-    if constexpr (is_iterable_v<decltype(entity_ptr)>) {
+    if constexpr (is_event_header_v<decltype(entity_ptr)>) {
       throw std::runtime_error("Size is not implemented for EventHeader variable");
     } else {
       return entity_ptr->GetNumberOfChannels();
@@ -53,7 +86,7 @@ BranchChannel Branch::operator[](size_t i_channel) { return BranchChannel(this, 
 BranchChannel Branch::NewChannel() {
   CheckMutable();
   ApplyT([this](auto entity_ptr) {
-    if constexpr (is_iterable_v<decltype(entity_ptr)>) {
+    if constexpr (is_event_header_v<decltype(entity_ptr)>) {
       throw std::runtime_error("Not applicable for EventHeader");
     } else {
       auto channel = entity_ptr->AddChannel();
@@ -72,6 +105,22 @@ void Branch::CheckMutable() const {
     throw std::runtime_error("Branch is not mutable");
 }
 
+double Branch::Value(const Variable &v) const {
+  return ApplyT([v] (auto entity_ptr) -> double {
+    if constexpr (is_event_header_v<decltype(entity_ptr)>) {
+      return Impl::ReadValue(v, *entity_ptr);
+    } else {
+      throw std::runtime_error("Not implemented for Detector<...>");
+    }
+  });
+}
+
+double ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
+  return ApplyT([this, &v](auto entity_ptr) -> double {
+    return Impl::ReadValue(v, *entity_ptr);
+  });
+}
+
 void BranchChannel::UpdateChannel(size_t new_channel) {
   i_channel = new_channel;
   UpdatePointer();
@@ -79,7 +128,7 @@ void BranchChannel::UpdateChannel(size_t new_channel) {
 void BranchChannel::UpdatePointer() {
   if (i_channel < branch->size()) {
     data_ptr = branch->ApplyT([this](auto entity_ptr) -> void * {
-      if constexpr (Branch::is_iterable_v<decltype(entity_ptr)>) {
+      if constexpr (Branch::is_event_header_v<decltype(entity_ptr)>) {
         throw std::runtime_error("Getting channel of the EventHeader is not implemented");
       } else {
         return &entity_ptr->GetChannel(this->i_channel);

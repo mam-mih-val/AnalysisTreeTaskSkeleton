@@ -80,15 +80,5 @@ void UserFillTask::ReadMap(std::map<std::string, void *>& map) {
 
 ATI2::Variable UserFillTask::GetVar(const std::string &name) const {
   auto &&[br_name, f_name] = ParseVarName(name);
-
-  ATI2::Variable v;
-  v.parent_branch = GetInBranch(br_name);
-  v.id = v.parent_branch->config.GetFieldId(f_name);
-  v.name = name;
-  v.field_name = f_name;
-
-  if (v.id == AnalysisTree::UndefValueShort)
-    throw std::runtime_error("Field of name '" + v.name + "' not found");
-
-  return v;
+  return GetInBranch(br_name)->GetVar(f_name);
 }

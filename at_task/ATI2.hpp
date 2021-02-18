@@ -20,19 +20,18 @@ struct BranchChannel {
   BranchChannel(Branch *branch, size_t i_channel);
 
   /* Getting value */
-  template<typename T>
-  T Value(const Variable &v) const;
+  double Value(const Variable &v) const;
+  void *Data() { return data_ptr; }
+  const void *Data() const { return data_ptr; }
 
   void Print(std::ostream &os = std::cout) const;
 
   template<typename Functor>
-  auto ApplyT(Functor && functor);
+  auto ApplyT(Functor &&functor);
   template<typename Functor>
-  auto ApplyT(Functor && functor) const;
+  auto ApplyT(Functor &&functor) const;
   void UpdatePointer();
   void UpdateChannel(size_t new_channel);
-  void *Data() { return data_ptr; }
-  const void *Data() const { return data_ptr; }
 
   void *data_ptr{nullptr};
   Branch *branch;
@@ -83,12 +82,13 @@ struct Branch {
   bool is_frozen{false};
 
   void InitDataPtr();
-
   void ConnectOutputTree(TTree *tree);
 
+  Variable GetVar(const std::string &field_name);
+
   /* Getting value */
-  template<typename T>
-  T Value(const Variable &v) const;
+  double Value(const Variable &v) const;
+
   size_t size() const;
   BranchChannel operator[](size_t i_channel);
 
@@ -102,11 +102,12 @@ struct Branch {
   void CheckFrozen() const;
   void CheckMutable() const;
   BranchChannel NewChannel();
-  template <typename T> Variable NewVariable(const std::string &field_name);
-
+  template<typename T>
+  Variable NewVariable(const std::string &field_name);
 
   template<typename EntityPtr>
-  constexpr static const bool is_iterable_v = std::is_same_v<AnalysisTree::EventHeader, std::remove_const_t<std::remove_pointer_t<EntityPtr>>>;
+  constexpr static const bool is_event_header_v =
+      std::is_same_v<AnalysisTree::EventHeader, std::remove_const_t<std::remove_pointer_t<EntityPtr>>>;
 
   template<typename Functor>
   auto ApplyT(Functor &&f) {
@@ -152,24 +153,16 @@ struct Variable {
   Branch *parent_branch{nullptr};
   std::string name;
   std::string field_name;
+
+  AnalysisTree::Types field_type{AnalysisTree::Types::kNumberOfTypes};
   short id{0};
 
-  template<typename T>
-  T Value() const { return parent_branch->template Value<T>(*this); }
+  double operator*() const { return parent_branch->Value(*this); }
 
   void Print(std::ostream &os = std::cout) const;
 };
 
-template<typename T>
-T ATI2::Branch::Value(const ATI2::Variable &v) const {
-  return ApplyT([&v](auto entity) -> T {
-    if constexpr (is_iterable_v<decltype(entity)>) {
-      return entity->template GetField<T>(v.id);
-    } else {
-      throw std::runtime_error("Value is not implemented for iterable detectors");
-    }
-  });
-}
+
 
 template<typename T>
 Variable Branch::NewVariable(const std::string &field_name) {
@@ -181,18 +174,14 @@ Variable Branch::NewVariable(const std::string &field_name) {
   v.field_name = field_name;
   v.parent_branch = this;
   v.id = config.GetFieldId(field_name);
+  v.field_type = config.GetFieldType(field_name);
   return v;
 }
 
-template<typename T>
-T ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
-  return ApplyT([this, &v](auto entity_ptr) -> T {
-    return entity_ptr->template GetField<T>(v.id);
-  });
-}
+
 
 template<typename Functor>
-auto BranchChannel::ApplyT(Functor && functor) {
+auto BranchChannel::ApplyT(Functor &&functor) {
   using AnalysisTree::DetType;
   if (DetType::kParticle == branch->config.GetType()) {
     return functor((AnalysisTree::Particle *) Data());
@@ -207,7 +196,7 @@ auto BranchChannel::ApplyT(Functor && functor) {
 }
 
 template<typename Functor>
-auto BranchChannel::ApplyT(Functor && functor) const {
+auto BranchChannel::ApplyT(Functor &&functor) const {
   using AnalysisTree::DetType;
   if (DetType::kParticle == branch->config.GetType()) {
     return functor((const AnalysisTree::Particle *) Data());

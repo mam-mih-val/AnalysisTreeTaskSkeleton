@@ -1,5 +1,8 @@
 # AnalysisTreeTaskSkeleton
 
+### Stable version
+0.0.6
+
 
 ### Examples
 

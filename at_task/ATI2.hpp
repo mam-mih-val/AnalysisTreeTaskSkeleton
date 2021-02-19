@@ -192,20 +192,23 @@ class ValueHolder {
  public:
   float GetVal() const;
   void SetVal(float val) const;
+  void SetVal(int int_val) const;
+  void SetVal(bool bool_val) const;
 
   operator float() const;
 
-  ValueHolder& operator= (double new_val)  { SetVal(new_val); return *this; }
-  ValueHolder& operator= (const ValueHolder &other);
+  template<typename T>
+  ValueHolder& operator= (T new_val)  { SetVal(new_val); return *this; }
+  ValueHolder& operator= (const ValueHolder& other) { return *this; }
 
  private:
   friend Branch;
   friend BranchChannel;
 
-  ValueHolder(Variable v, void *data_ptr)
-      : v(std::move(v)), data_ptr(data_ptr) {}
+  ValueHolder(const Variable &v, void *data_ptr)
+      : v(v), data_ptr(data_ptr) {}
 
-  Variable v;
+  const Variable &v;
   void *data_ptr;
 };
 

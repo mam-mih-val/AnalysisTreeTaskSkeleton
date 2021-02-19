@@ -99,7 +99,7 @@ public:
   void Exec() override {
 
     auto vtx_x_val = *vtx_x;
-    std::cout << float(vtx_x_val) << std::endl;
+//    std::cout << float(vtx_x_val) << std::endl;
 
     test_branch->ClearChannels();
 
@@ -107,10 +107,9 @@ public:
 //    GetBranch("RecEventHeader")->size(); /* not implemented */
 
     for (auto &track : vtx_tracks->Loop()) {
-      track.Print();
-      std::cout << track[dca_x] << std::endl;
+//      track.Print();
       auto channel = test_branch->NewChannel();
-      channel[test_field1] = 10;
+      channel[test_field1] = track[dca_x];
     }
 
   }

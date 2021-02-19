@@ -10,52 +10,14 @@
 
 using namespace ATI2;
 
-namespace Impl {
-
-template<typename Entity, typename ValueType>
-ValueType ReadValue(const Variable &v, const Entity &e) {
-  using AnalysisTree::Types;
-
-  if (v.GetFieldType() == Types::kFloat) {
-    return (ValueType) e.template GetField<float>(v.GetId());
-  } else if (v.GetFieldType() == Types::kInteger) {
-    return (ValueType) e.template GetField<int>(v.GetId());
-  } else if (v.GetFieldType() == Types::kBool) {
-    return (ValueType) e.template GetField<bool>(v.GetId());
-  }
-  /* unreachable */
-  assert(false);
-}
-
-template<typename Entity, typename ValueType>
-inline
-void SetValue(const Variable &v, Entity &e, ValueType value) {
-  using AnalysisTree::Types;
-
-  if (v.GetFieldType() == Types::kFloat) {
-    e.template SetField<float>(value, v.GetId());
-    return;
-  } else if (v.GetFieldType() == Types::kInteger) {
-    e.template SetField<int>(value, v.GetId());
-    return;
-  } else if (v.GetFieldType() == Types::kBool) {
-    e.template SetField<bool>(value, v.GetId());
-    return;
-  }
-  /* unreachable */
-  assert(false);
-}
-
-} // namespace Impl
-
-
 void BranchChannel::Print(std::ostream &os) const {
   os << "Branch " << branch->config.GetName() << " channel #" << i_channel << std::endl;
 }
 
-BranchLoopIter BranchLoop::begin() const { return branch->ChannelsBegin(); }
-BranchLoopIter BranchLoop::end() const { return branch->ChannelsEnd(); }
 
+BranchLoopIter BranchLoop::begin() const { return branch->ChannelsBegin(); }
+
+BranchLoopIter BranchLoop::end() const { return branch->ChannelsEnd(); }
 Variable Branch::GetVar(const std::string &field_name) {
   ATI2::Variable v;
   v.parent_branch = this;
@@ -68,6 +30,7 @@ Variable Branch::GetVar(const std::string &field_name) {
     throw std::runtime_error("Field of name '" + v.name + "' not found");
   return v;
 }
+
 void Branch::ConnectOutputTree(TTree *tree) {
   is_connected_to_output = ApplyT([this, tree](auto entity) -> bool {
     if (!tree)
@@ -77,7 +40,6 @@ void Branch::ConnectOutputTree(TTree *tree) {
     return bool(new_tree_branch_ptr);
   });
 }
-
 void Branch::InitDataPtr() {
   ApplyT([this](auto entity) {
     if (entity)
@@ -101,6 +63,7 @@ BranchChannel::BranchChannel(Branch *branch, size_t i_channel) : branch(branch),
 }
 
 BranchChannel Branch::operator[](size_t i_channel) { return BranchChannel(this, i_channel); }
+
 BranchChannel Branch::NewChannel() {
   CheckMutable(true);
   ApplyT([this](auto entity_ptr) {
@@ -114,7 +77,6 @@ BranchChannel Branch::NewChannel() {
   });
   return operator[](size() - 1);
 }
-
 Variable Branch::NewVariable(const std::string &field_name, AnalysisTree::Types type) {
   CheckFrozen(false);
   CheckMutable(true);
@@ -151,22 +113,22 @@ void Branch::ClearChannels() {
     }
   });
 }
+
 void Branch::CheckFrozen(bool expected) const {
   if (is_frozen != expected)
     throw std::runtime_error("Branch is frozen");
 }
-
 void Branch::CheckMutable(bool expected) const {
   if (is_mutable != expected)
     throw std::runtime_error("Branch is not mutable");
 }
+
 ValueHolder Branch::Value(const Variable &v) const {
   if (config.GetType() == AnalysisTree::DetType::kEventHeader) {
     return ValueHolder(v, data);
   }
   throw std::runtime_error("Not implemented for iterable branch");
 }
-
 ValueHolder Branch::operator[](const Variable &v) const { return Value(v); }
 
 ValueHolder ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
@@ -174,6 +136,7 @@ ValueHolder ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
 }
 
 ValueHolder BranchChannel::operator[](const Variable &v) const { return Value(v); }
+
 void BranchChannel::UpdateChannel(size_t new_channel) {
   i_channel = new_channel;
   UpdatePointer();
@@ -191,7 +154,6 @@ void BranchChannel::UpdatePointer() {
     data_ptr = nullptr;
   }
 }
-
 BranchLoopIter &BranchLoopIter::operator++() {
   i_channel++;
   current_channel->UpdateChannel(i_channel);
@@ -206,10 +168,48 @@ void Variable::Print(std::ostream &os) const {
 
 namespace Impl {
 
+template<typename Entity, typename ValueType>
+ValueType ReadValue(const Variable &v, const Entity *e) {
+  using AnalysisTree::Types;
+
+  if (v.GetFieldType() == Types::kFloat) {
+    return (ValueType) e->template GetField<float>(v.GetId());
+  } else if (v.GetFieldType() == Types::kInteger) {
+    return (ValueType) e->template GetField<int>(v.GetId());
+  } else if (v.GetFieldType() == Types::kBool) {
+    return (ValueType) e->template GetField<bool>(v.GetId());
+  }
+  /* unreachable */
+  assert(false);
+}
+
+template<typename Entity, typename ValueType>
+inline
+void SetValue(const Variable &v, Entity *e, ValueType new_value) {
+  using AnalysisTree::Types;
+
+  if (v.GetFieldType() == Types::kFloat) {
+    e->template SetField<float>(new_value, v.GetId());
+    return;
+  } else if (v.GetFieldType() == Types::kInteger) {
+    e->template SetField<int>(new_value, v.GetId());
+    return;
+  } else if (v.GetFieldType() == Types::kBool) {
+    e->template SetField<bool>(new_value, v.GetId());
+    return;
+  }
+  /* unreachable */
+  assert(false);
+}
+
+} // namespace Impl
+
+namespace Impl {
+
 template<typename Entity>
-inline Entity *DataT(void *data_ptr) { return (Entity *) data_ptr; }
+inline Entity *DataT(void *data_ptr) { return reinterpret_cast<Entity*>(data_ptr); }
 template<typename Entity>
-inline const Entity *DataT(const void *data_ptr) { return (const Entity *) data_ptr; }
+inline const Entity *DataT(const void *data_ptr) { return reinterpret_cast<const Entity*>(data_ptr); }
 
 template<typename Functor, typename DataPtr>
 auto ApplyToEntity(AnalysisTree::DetType det_type, DataPtr ptr, Functor &&functor) {
@@ -229,12 +229,14 @@ auto ApplyToEntity(AnalysisTree::DetType det_type, DataPtr ptr, Functor &&functo
   assert(false);
 }
 
+
+
 }
 float ValueHolder::GetVal() const {
   return Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(),
-                             data_ptr, [this](const auto entity_ptr) -> double {
+                             data_ptr, [this](auto entity_ptr) -> double {
         using Entity = std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>;
-        return Impl::ReadValue<Entity,float>(this->v, *entity_ptr);
+        return Impl::ReadValue<Entity,float>(this->v, entity_ptr);
       });
 }
 
@@ -245,6 +247,18 @@ ValueHolder::operator float() const {
 void ValueHolder::SetVal(float val) const {
   v.GetParentBranch()->CheckMutable(true);
   Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(), data_ptr, [this, val](auto entity_ptr) {
-    Impl::SetValue(v, *entity_ptr, val);
+    Impl::SetValue(v, entity_ptr, val);
+  });
+}
+void ValueHolder::SetVal(int val) const {
+  v.GetParentBranch()->CheckMutable(true);
+  Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(), data_ptr, [this, val](auto entity_ptr) {
+    Impl::SetValue(v, entity_ptr, val);
+  });
+}
+void ValueHolder::SetVal(bool val) const {
+  v.GetParentBranch()->CheckMutable(true);
+  Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(), data_ptr, [this, val](auto entity_ptr) {
+    Impl::SetValue(v, entity_ptr, val);
   });
 }

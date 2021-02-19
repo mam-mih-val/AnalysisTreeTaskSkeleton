@@ -103,7 +103,7 @@ BranchChannel::BranchChannel(Branch *branch, size_t i_channel) : branch(branch),
 
 BranchChannel Branch::operator[](size_t i_channel) { return BranchChannel(this, i_channel); }
 BranchChannel Branch::NewChannel() {
-  CheckMutable();
+  CheckMutable(true);
   ApplyT([this](auto entity_ptr) {
     if constexpr (is_event_header_v < decltype(entity_ptr) >) {
       throw std::runtime_error("Not applicable for EventHeader");
@@ -115,12 +115,12 @@ BranchChannel Branch::NewChannel() {
   });
   return operator[](size() - 1);
 }
-void Branch::CheckFrozen() const {
-  if (is_frozen)
+void Branch::CheckFrozen(bool expected) const {
+  if (is_frozen != expected)
     throw std::runtime_error("Branch is frozen");
 }
-void Branch::CheckMutable() const {
-  if (!is_mutable)
+void Branch::CheckMutable(bool expected) const {
+  if (is_mutable != expected)
     throw std::runtime_error("Branch is not mutable");
 }
 
@@ -201,7 +201,7 @@ double ValueHolder::GetVal() const {
                              });
 }
 void ValueHolder::SetVal(double val) const {
-  v.GetParentBranch()->CheckMutable();
+  v.GetParentBranch()->CheckMutable(true);
   Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(), data_ptr, [this, val](auto entity_ptr) {
     Impl::SetValue(v, *entity_ptr, val);
   });

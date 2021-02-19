@@ -17,11 +17,11 @@ class Variable;
 struct Branch;
 class BranchChannel;
 struct BranchLoop;
+struct BranchLoopIter;
 class ValueHolder;
 
 class BranchChannel {
  public:
-  BranchChannel(Branch *branch, size_t i_channel);
 
   /* Getting value */
   ValueHolder Value(const Variable &v) const;
@@ -31,10 +31,14 @@ class BranchChannel {
 
   void Print(std::ostream &os = std::cout) const;
 
+ private:
+  friend Branch;
+  friend BranchLoopIter;
+
+  BranchChannel(Branch *branch, size_t i_channel);
   void UpdatePointer();
   void UpdateChannel(size_t new_channel);
 
- private:
   void *data_ptr{nullptr};
   Branch *branch;
   size_t i_channel;
@@ -42,9 +46,9 @@ class BranchChannel {
 
 struct BranchLoopIter {
   BranchLoopIter(Branch *branch, size_t i_channel) :
-      branch(branch), i_channel(i_channel),
-      current_channel(std::make_unique<BranchChannel>(branch,
-                                                      i_channel)) {}
+      branch(branch), i_channel(i_channel) {
+    current_channel.reset(new BranchChannel(branch, i_channel));
+  }
 
   bool operator==(const BranchLoopIter &rhs) const {
     return i_channel == rhs.i_channel &&
@@ -90,8 +94,7 @@ struct Branch {
 
   /* Getting value */
   ValueHolder Value(const Variable &v) const;
-  inline ValueHolder operator[](const Variable &v) const;
-  ValueHolder operator[] (const Variable& v);
+  ValueHolder operator[](const Variable &v) const;
 
   /* iterating */
   size_t size() const;
@@ -102,9 +105,10 @@ struct Branch {
 
   /* Modification */
   void Freeze(bool freeze = true) { is_frozen = freeze; };
-  void CheckFrozen() const;
-  void CheckMutable() const;
+  void CheckFrozen(bool expected = true) const;
+  void CheckMutable(bool expected = true) const;
   BranchChannel NewChannel();
+  void ClearChannels();
   template<typename T>
   Variable NewVariable(const std::string &field_name);
 
@@ -193,6 +197,7 @@ class ValueHolder {
   operator double() const { return GetVal(); }
 
   ValueHolder& operator= (double new_val)  { SetVal(new_val); return *this; }
+  ValueHolder& operator= (const ValueHolder &other);
 
  private:
   friend Branch;
@@ -207,7 +212,8 @@ class ValueHolder {
 
 template<typename T>
 Variable Branch::NewVariable(const std::string &field_name) {
-  CheckFrozen();
+  CheckFrozen(false);
+  CheckMutable(true);
   config.template AddField<T>(field_name);
 
   ATI2::Variable v;
@@ -218,7 +224,6 @@ Variable Branch::NewVariable(const std::string &field_name) {
   v.field_type = config.GetFieldType(field_name);
   return v;
 }
-
 
 } // namespace ATI2
 

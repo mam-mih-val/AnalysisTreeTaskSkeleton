@@ -110,7 +110,7 @@ public:
       track.Print();
       std::cout << track[dca_x] << std::endl;
       auto channel = test_branch->NewChannel();
-      channel.Set(test_field1, 10.);
+      channel[test_field1] = 10;
     }
 
   }

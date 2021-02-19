@@ -14,7 +14,7 @@ namespace Impl {
 
 template<typename Entity>
 inline
-double ReadValue(const Variable &v, const Entity& e) {
+double ReadValue(const Variable &v, const Entity &e) {
   using AnalysisTree::Types;
 
   if (v.GetFieldType() == Types::kFloat) {
@@ -30,7 +30,7 @@ double ReadValue(const Variable &v, const Entity& e) {
 
 template<typename Entity>
 inline
-void SetValue(const Variable& v, Entity&e, double value) {
+void SetValue(const Variable &v, Entity &e, double value) {
   using AnalysisTree::Types;
 
   if (v.GetFieldType() == Types::kFloat) {
@@ -89,7 +89,7 @@ void Branch::InitDataPtr() {
 
 size_t ATI2::Branch::size() const {
   return ApplyT([](auto entity_ptr) -> size_t {
-    if constexpr (is_event_header_v<decltype(entity_ptr)>) {
+    if constexpr (is_event_header_v < decltype(entity_ptr) >) {
       throw std::runtime_error("Size is not implemented for EventHeader variable");
     } else {
       return entity_ptr->GetNumberOfChannels();
@@ -105,7 +105,7 @@ BranchChannel Branch::operator[](size_t i_channel) { return BranchChannel(this, 
 BranchChannel Branch::NewChannel() {
   CheckMutable();
   ApplyT([this](auto entity_ptr) {
-    if constexpr (is_event_header_v<decltype(entity_ptr)>) {
+    if constexpr (is_event_header_v < decltype(entity_ptr) >) {
       throw std::runtime_error("Not applicable for EventHeader");
     } else {
       auto channel = entity_ptr->AddChannel();
@@ -124,20 +124,21 @@ void Branch::CheckMutable() const {
     throw std::runtime_error("Branch is not mutable");
 }
 
-double Branch::Value(const Variable &v) const {
-  return ApplyT([v] (auto entity_ptr) -> double {
-    if constexpr (is_event_header_v<decltype(entity_ptr)>) {
-      return Impl::ReadValue(v, *entity_ptr);
+ValueHolder Branch::Value(const Variable &v) const {
+  return ApplyT([this, v](auto entity_ptr) -> ValueHolder {
+    if constexpr (is_event_header_v < decltype(entity_ptr) >) {
+      return ValueHolder(v, (void *) entity_ptr);
     } else {
       throw std::runtime_error("Not implemented for Detector<...>");
     }
   });
 }
+ValueHolder Branch::operator[](const Variable &v) const { return Value(v); }
 
 void Branch::Set(const Variable &v, double value) {
   CheckMutable();
-  ApplyT([&v, value] (auto entity_ptr) -> void {
-    if constexpr (is_event_header_v< decltype(entity_ptr)>) {
+  ApplyT([&v, value](auto entity_ptr) -> void {
+    if constexpr (is_event_header_v < decltype(entity_ptr) >) {
       Impl::SetValue(v, *entity_ptr, value);
     } else {
       throw std::runtime_error("Not implemented for Detector<...>");
@@ -145,14 +146,16 @@ void Branch::Set(const Variable &v, double value) {
   });
 }
 
-double ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
-  return ApplyT([this, &v](auto entity_ptr) -> double {
-    return Impl::ReadValue(v, *entity_ptr);
+ValueHolder ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
+  return ApplyT([this, &v](auto entity_ptr) -> ValueHolder {
+    return ValueHolder(v, data_ptr);
   });
 }
+ValueHolder BranchChannel::operator[](const Variable &v) const { return Value(v); }
+
 void BranchChannel::Set(const Variable &v, double value) {
   branch->CheckMutable();
-  ApplyT([&v, value] (auto entity_ptr) -> void {
+  ApplyT([&v, value](auto entity_ptr) -> void {
     Impl::SetValue(v, *entity_ptr, value);
   });
 }
@@ -180,6 +183,49 @@ BranchLoopIter &BranchLoopIter::operator++() {
   return *this;
 }
 
+ValueHolder Variable::operator*() const { return parent_branch->Value(*this); }
+
 void Variable::Print(std::ostream &os) const {
   os << name << "(id = " << id << ")" << std::endl;
+}
+
+namespace Impl {
+
+template<typename Entity>
+inline Entity *DataT(void *data_ptr) { return (Entity *) data_ptr; }
+template<typename Entity>
+inline const Entity *DataT(const void *data_ptr) { return (const Entity *) data_ptr; }
+
+template<typename Functor, typename DataPtr>
+auto ApplyToEntity(AnalysisTree::DetType det_type, DataPtr ptr, Functor &&functor) {
+  using AnalysisTree::DetType;
+  if (DetType::kParticle == det_type) {
+    return functor(DataT<AnalysisTree::Particle>(ptr));
+  } else if (DetType::kTrack == det_type) {
+    return functor(DataT<AnalysisTree::Track>(ptr));
+  } else if (DetType::kModule == det_type) {
+    return functor(DataT<AnalysisTree::Module>(ptr));
+  } else if (DetType::kHit == det_type) {
+    return functor(DataT<AnalysisTree::Hit>(ptr));
+  } else if (DetType::kEventHeader == det_type) {
+    return functor(DataT<AnalysisTree::EventHeader>(ptr));
+  }
+  /* unreachable */
+  assert(false);
+}
+
+}
+
+double ValueHolder::GetVal() const {
+  return Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(),
+                             data_ptr,
+                             [this](const auto entity_ptr) -> double {
+                               return Impl::ReadValue(this->v, *entity_ptr);
+                             });
+}
+void ValueHolder::SetVal(double val) const {
+  v.GetParentBranch()->CheckMutable();
+  Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(), data_ptr, [this, val](auto entity_ptr) {
+    Impl::SetValue(v, *entity_ptr, val);
+  });
 }

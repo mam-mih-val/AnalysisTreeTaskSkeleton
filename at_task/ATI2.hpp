@@ -9,22 +9,24 @@
 #include <AnalysisTree/Configuration.hpp>
 #include <AnalysisTree/Detector.hpp>
 #include <AnalysisTree/EventHeader.hpp>
+#include <utility>
 
 namespace ATI2 {
 
-struct Variable;
+class Variable;
 struct Branch;
+class BranchChannel;
 struct BranchLoop;
-
+class ValueHolder;
 
 class BranchChannel {
  public:
   BranchChannel(Branch *branch, size_t i_channel);
 
   /* Getting value */
-  double Value(const Variable &v) const;
-  inline double operator[] (const Variable &v) const { return Value(v); }
-  void Set(const Variable& v, double value);
+  ValueHolder Value(const Variable &v) const;
+  ValueHolder operator[](const Variable &v) const;
+  void Set(const Variable &v, double value);
   void *Data() { return data_ptr; }
   const void *Data() const { return data_ptr; }
 
@@ -44,10 +46,10 @@ class BranchChannel {
 };
 
 struct BranchLoopIter {
-  BranchLoopIter(Branch *branch, size_t i_channel) : branch(branch),
-                                                     i_channel(i_channel),
-                                                     current_channel(std::make_unique<BranchChannel>(branch,
-                                                                                                     i_channel)) {}
+  BranchLoopIter(Branch *branch, size_t i_channel) :
+      branch(branch), i_channel(i_channel),
+      current_channel(std::make_unique<BranchChannel>(branch,
+                                                      i_channel)) {}
 
   bool operator==(const BranchLoopIter &rhs) const {
     return i_channel == rhs.i_channel &&
@@ -92,12 +94,14 @@ struct Branch {
   Variable GetVar(const std::string &field_name);
 
   /* Getting value */
-  double Value(const Variable &v) const;
-  inline double operator[] (const Variable&v) const { return Value(v); }
-  void Set(const Variable& v, double value);
+  ValueHolder Value(const Variable &v) const;
+  inline ValueHolder operator[](const Variable &v) const;
+  void Set(const Variable &v, double value);
 
   size_t size() const;
   BranchChannel operator[](size_t i_channel);
+  ValueHolder operator[] (const Variable& v);
+
 
   /* iterating */
   BranchLoop Loop() { return BranchLoop(this); };
@@ -156,13 +160,10 @@ struct Branch {
 
 };
 
-
-
 class Variable {
 
  public:
-  double operator*() const { return parent_branch->Value(*this); }
-  void Set(double value) const { parent_branch->Set(*this, value); }
+  ValueHolder operator*() const;
   void Print(std::ostream &os = std::cout) const;
 
   Branch *GetParentBranch() const {
@@ -192,7 +193,25 @@ class Variable {
   std::string field_name;
 };
 
+class ValueHolder {
+ public:
+  double GetVal() const;
+  void SetVal(double val) const;
 
+  operator double() const { return GetVal(); }
+
+  ValueHolder& operator= (double new_val)  { SetVal(new_val); return *this; }
+
+ private:
+  friend Branch;
+  friend BranchChannel;
+
+  ValueHolder(Variable v, void *data_ptr)
+      : v(std::move(v)), data_ptr(data_ptr) {}
+
+  Variable v;
+  void *data_ptr;
+};
 
 template<typename T>
 Variable Branch::NewVariable(const std::string &field_name) {
@@ -238,7 +257,6 @@ auto BranchChannel::ApplyT(Functor &&functor) const {
   }
   assert(false);
 }
-
 
 } // namespace ATI2
 

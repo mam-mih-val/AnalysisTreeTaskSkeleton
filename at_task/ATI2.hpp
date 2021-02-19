@@ -191,6 +191,8 @@ class Variable {
 class ValueHolder {
  public:
   float GetVal() const;
+  int GetInt() const;
+  bool GetBool() const;
   void SetVal(float val) const;
   void SetVal(int int_val) const;
   void SetVal(bool bool_val) const;
@@ -199,7 +201,7 @@ class ValueHolder {
 
   template<typename T>
   ValueHolder& operator= (T new_val)  { SetVal(new_val); return *this; }
-  ValueHolder& operator= (const ValueHolder& other) { return *this; }
+  ValueHolder& operator= (const ValueHolder& other);
 
  private:
   friend Branch;

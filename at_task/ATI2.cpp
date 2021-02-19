@@ -14,7 +14,6 @@ void BranchChannel::Print(std::ostream &os) const {
   os << "Branch " << branch->config.GetName() << " channel #" << i_channel << std::endl;
 }
 
-
 BranchLoopIter BranchLoop::begin() const { return branch->ChannelsBegin(); }
 
 BranchLoopIter BranchLoop::end() const { return branch->ChannelsEnd(); }
@@ -207,9 +206,9 @@ void SetValue(const Variable &v, Entity *e, ValueType new_value) {
 namespace Impl {
 
 template<typename Entity>
-inline Entity *DataT(void *data_ptr) { return reinterpret_cast<Entity*>(data_ptr); }
+inline Entity *DataT(void *data_ptr) { return reinterpret_cast<Entity *>(data_ptr); }
 template<typename Entity>
-inline const Entity *DataT(const void *data_ptr) { return reinterpret_cast<const Entity*>(data_ptr); }
+inline const Entity *DataT(const void *data_ptr) { return reinterpret_cast<const Entity *>(data_ptr); }
 
 template<typename Functor, typename DataPtr>
 auto ApplyToEntity(AnalysisTree::DetType det_type, DataPtr ptr, Functor &&functor) {
@@ -229,21 +228,33 @@ auto ApplyToEntity(AnalysisTree::DetType det_type, DataPtr ptr, Functor &&functo
   assert(false);
 }
 
-
-
 }
 float ValueHolder::GetVal() const {
   return Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(),
-                             data_ptr, [this](auto entity_ptr) -> double {
+                             data_ptr, [this](auto entity_ptr) {
         using Entity = std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>;
-        return Impl::ReadValue<Entity,float>(this->v, entity_ptr);
+        return Impl::ReadValue<Entity, float>(this->v, entity_ptr);
       });
 }
 
+int ValueHolder::GetInt() const {
+  return Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(),
+                             data_ptr, [this](auto entity_ptr) {
+        using Entity = std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>;
+        return Impl::ReadValue<Entity, int>(this->v, entity_ptr);
+      });
+}
+
+bool ValueHolder::GetBool() const {
+  return Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(),
+                             data_ptr, [this](auto entity_ptr) {
+        using Entity = std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>;
+        return Impl::ReadValue<Entity, bool>(this->v, entity_ptr);
+      });
+}
 ValueHolder::operator float() const {
   return GetVal();
 }
-
 void ValueHolder::SetVal(float val) const {
   v.GetParentBranch()->CheckMutable(true);
   Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(), data_ptr, [this, val](auto entity_ptr) {
@@ -262,3 +273,5 @@ void ValueHolder::SetVal(bool val) const {
     Impl::SetValue(v, entity_ptr, val);
   });
 }
+
+ValueHolder &ValueHolder::operator=(const ValueHolder &other) { return *this; }

@@ -109,8 +109,7 @@ struct Branch {
   void CheckMutable(bool expected = true) const;
   BranchChannel NewChannel();
   void ClearChannels();
-  template<typename T>
-  Variable NewVariable(const std::string &field_name);
+  Variable NewVariable(const std::string &field_name, AnalysisTree::Types type);
 
   template<typename EntityPtr>
   constexpr static const bool is_event_header_v =
@@ -191,10 +190,10 @@ class Variable {
 
 class ValueHolder {
  public:
-  double GetVal() const;
-  void SetVal(double val) const;
+  float GetVal() const;
+  void SetVal(float val) const;
 
-  operator double() const { return GetVal(); }
+  operator float() const;
 
   ValueHolder& operator= (double new_val)  { SetVal(new_val); return *this; }
   ValueHolder& operator= (const ValueHolder &other);
@@ -210,20 +209,8 @@ class ValueHolder {
   void *data_ptr;
 };
 
-template<typename T>
-Variable Branch::NewVariable(const std::string &field_name) {
-  CheckFrozen(false);
-  CheckMutable(true);
-  config.template AddField<T>(field_name);
 
-  ATI2::Variable v;
-  v.name = config.GetName() + "/" + field_name;
-  v.field_name = field_name;
-  v.parent_branch = this;
-  v.id = config.GetFieldId(field_name);
-  v.field_type = config.GetFieldType(field_name);
-  return v;
-}
+
 
 } // namespace ATI2
 

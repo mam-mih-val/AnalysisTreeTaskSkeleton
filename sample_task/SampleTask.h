@@ -91,7 +91,7 @@ public:
     NewBranch("test", AnalysisTree::DetType::kParticle);
 
     test_branch = GetOutBranch("test");
-    test_field1 = test_branch->NewVariable<float>("field1");
+    test_field1 = test_branch->NewVariable("field1", AnalysisTree::Types::kFloat);
     vtx_tracks_branch = GetInBranch("VtxTracks");
 
 
@@ -99,9 +99,9 @@ public:
   void Exec() override {
 
     auto vtx_x_val = *vtx_x;
-    std::cout << vtx_x_val << std::endl;
+    std::cout << float(vtx_x_val) << std::endl;
 
-
+    test_branch->ClearChannels();
 
 //    std::cout << dca_x.Get<float>() << std::endl; /* not implemented */
 //    GetBranch("RecEventHeader")->size(); /* not implemented */

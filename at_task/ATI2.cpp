@@ -12,25 +12,24 @@ using namespace ATI2;
 
 namespace Impl {
 
-template<typename Entity>
-inline
-double ReadValue(const Variable &v, const Entity &e) {
+template<typename Entity, typename ValueType>
+ValueType ReadValue(const Variable &v, const Entity &e) {
   using AnalysisTree::Types;
 
   if (v.GetFieldType() == Types::kFloat) {
-    return e.template GetField<float>(v.GetId());
+    return (ValueType) e.template GetField<float>(v.GetId());
   } else if (v.GetFieldType() == Types::kInteger) {
-    return e.template GetField<int>(v.GetId());
+    return (ValueType) e.template GetField<int>(v.GetId());
   } else if (v.GetFieldType() == Types::kBool) {
-    return e.template GetField<bool>(v.GetId());
+    return (ValueType) e.template GetField<bool>(v.GetId());
   }
   /* unreachable */
   assert(false);
 }
 
-template<typename Entity>
+template<typename Entity, typename ValueType>
 inline
-void SetValue(const Variable &v, Entity &e, double value) {
+void SetValue(const Variable &v, Entity &e, ValueType value) {
   using AnalysisTree::Types;
 
   if (v.GetFieldType() == Types::kFloat) {
@@ -115,28 +114,66 @@ BranchChannel Branch::NewChannel() {
   });
   return operator[](size() - 1);
 }
+
+Variable Branch::NewVariable(const std::string &field_name, AnalysisTree::Types type) {
+  CheckFrozen(false);
+  CheckMutable(true);
+
+  using AnalysisTree::Types;
+
+  if (Types::kFloat == type) {
+    config.template AddField<float>(field_name);
+  } else if (Types::kInteger == type) {
+    config.template AddField<int>(field_name);
+  } else if (Types::kBool == type) {
+    config.template AddField<bool>(field_name);
+  } else {
+    /* should never happen */
+    assert(false);
+  }
+
+  ATI2::Variable v;
+  v.name = config.GetName() + "/" + field_name;
+  v.field_name = field_name;
+  v.parent_branch = this;
+  v.id = config.GetFieldId(field_name);
+  v.field_type = config.GetFieldType(field_name);
+  return v;
+}
+
+void Branch::ClearChannels() {
+  CheckMutable();
+  ApplyT([this](auto entity_ptr) -> void {
+    if constexpr (is_event_header_v < decltype(entity_ptr) >) {
+      throw std::runtime_error("Not applicable for EventHeader");
+    } else {
+      entity_ptr->ClearChannels();
+    }
+  });
+}
 void Branch::CheckFrozen(bool expected) const {
   if (is_frozen != expected)
     throw std::runtime_error("Branch is frozen");
 }
+
 void Branch::CheckMutable(bool expected) const {
   if (is_mutable != expected)
     throw std::runtime_error("Branch is not mutable");
 }
-
 ValueHolder Branch::Value(const Variable &v) const {
   if (config.GetType() == AnalysisTree::DetType::kEventHeader) {
     return ValueHolder(v, data);
   }
   throw std::runtime_error("Not implemented for iterable branch");
 }
+
 ValueHolder Branch::operator[](const Variable &v) const { return Value(v); }
 
 ValueHolder ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
   return ValueHolder(v, data_ptr);
 }
-ValueHolder BranchChannel::operator[](const Variable &v) const { return Value(v); }
 
+ValueHolder BranchChannel::operator[](const Variable &v) const { return Value(v); }
 void BranchChannel::UpdateChannel(size_t new_channel) {
   i_channel = new_channel;
   UpdatePointer();
@@ -154,6 +191,7 @@ void BranchChannel::UpdatePointer() {
     data_ptr = nullptr;
   }
 }
+
 BranchLoopIter &BranchLoopIter::operator++() {
   i_channel++;
   current_channel->UpdateChannel(i_channel);
@@ -192,15 +230,19 @@ auto ApplyToEntity(AnalysisTree::DetType det_type, DataPtr ptr, Functor &&functo
 }
 
 }
-
-double ValueHolder::GetVal() const {
+float ValueHolder::GetVal() const {
   return Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(),
-                             data_ptr,
-                             [this](const auto entity_ptr) -> double {
-                               return Impl::ReadValue(this->v, *entity_ptr);
-                             });
+                             data_ptr, [this](const auto entity_ptr) -> double {
+        using Entity = std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>;
+        return Impl::ReadValue<Entity,float>(this->v, *entity_ptr);
+      });
 }
-void ValueHolder::SetVal(double val) const {
+
+ValueHolder::operator float() const {
+  return GetVal();
+}
+
+void ValueHolder::SetVal(float val) const {
   v.GetParentBranch()->CheckMutable(true);
   Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(), data_ptr, [this, val](auto entity_ptr) {
     Impl::SetValue(v, *entity_ptr, val);

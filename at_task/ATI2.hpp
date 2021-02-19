@@ -26,16 +26,11 @@ class BranchChannel {
   /* Getting value */
   ValueHolder Value(const Variable &v) const;
   ValueHolder operator[](const Variable &v) const;
-  void Set(const Variable &v, double value);
   void *Data() { return data_ptr; }
   const void *Data() const { return data_ptr; }
 
   void Print(std::ostream &os = std::cout) const;
 
-  template<typename Functor>
-  auto ApplyT(Functor &&functor);
-  template<typename Functor>
-  auto ApplyT(Functor &&functor) const;
   void UpdatePointer();
   void UpdateChannel(size_t new_channel);
 
@@ -96,14 +91,11 @@ struct Branch {
   /* Getting value */
   ValueHolder Value(const Variable &v) const;
   inline ValueHolder operator[](const Variable &v) const;
-  void Set(const Variable &v, double value);
-
-  size_t size() const;
-  BranchChannel operator[](size_t i_channel);
   ValueHolder operator[] (const Variable& v);
 
-
   /* iterating */
+  size_t size() const;
+  BranchChannel operator[](size_t i_channel);
   BranchLoop Loop() { return BranchLoop(this); };
   BranchLoopIter ChannelsBegin() { return BranchLoopIter(this, 0); };
   BranchLoopIter ChannelsEnd() { return BranchLoopIter(this, size()); };
@@ -227,36 +219,6 @@ Variable Branch::NewVariable(const std::string &field_name) {
   return v;
 }
 
-
-template<typename Functor>
-auto BranchChannel::ApplyT(Functor &&functor) {
-  using AnalysisTree::DetType;
-  if (DetType::kParticle == branch->config.GetType()) {
-    return functor((AnalysisTree::Particle *) Data());
-  } else if (DetType::kHit == branch->config.GetType()) {
-    return functor((AnalysisTree::Hit *) Data());
-  } else if (DetType::kModule == branch->config.GetType()) {
-    return functor((AnalysisTree::Module *) Data());
-  } else if (DetType::kTrack == branch->config.GetType()) {
-    return functor((AnalysisTree::Track *) Data());
-  }
-  assert(false);
-}
-
-template<typename Functor>
-auto BranchChannel::ApplyT(Functor &&functor) const {
-  using AnalysisTree::DetType;
-  if (DetType::kParticle == branch->config.GetType()) {
-    return functor((const AnalysisTree::Particle *) Data());
-  } else if (DetType::kHit == branch->config.GetType()) {
-    return functor((const AnalysisTree::Hit *) Data());
-  } else if (DetType::kModule == branch->config.GetType()) {
-    return functor((const AnalysisTree::Module *) Data());
-  } else if (DetType::kTrack == branch->config.GetType()) {
-    return functor((const AnalysisTree::Track *) Data());
-  }
-  assert(false);
-}
 
 } // namespace ATI2
 

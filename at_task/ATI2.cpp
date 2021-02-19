@@ -125,40 +125,17 @@ void Branch::CheckMutable() const {
 }
 
 ValueHolder Branch::Value(const Variable &v) const {
-  return ApplyT([this, v](auto entity_ptr) -> ValueHolder {
-    if constexpr (is_event_header_v < decltype(entity_ptr) >) {
-      return ValueHolder(v, (void *) entity_ptr);
-    } else {
-      throw std::runtime_error("Not implemented for Detector<...>");
-    }
-  });
+  if (config.GetType() == AnalysisTree::DetType::kEventHeader) {
+    return ValueHolder(v, data);
+  }
+  throw std::runtime_error("Not implemented for iterable branch");
 }
 ValueHolder Branch::operator[](const Variable &v) const { return Value(v); }
 
-void Branch::Set(const Variable &v, double value) {
-  CheckMutable();
-  ApplyT([&v, value](auto entity_ptr) -> void {
-    if constexpr (is_event_header_v < decltype(entity_ptr) >) {
-      Impl::SetValue(v, *entity_ptr, value);
-    } else {
-      throw std::runtime_error("Not implemented for Detector<...>");
-    }
-  });
-}
-
 ValueHolder ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
-  return ApplyT([this, &v](auto entity_ptr) -> ValueHolder {
-    return ValueHolder(v, data_ptr);
-  });
+  return ValueHolder(v, data_ptr);
 }
 ValueHolder BranchChannel::operator[](const Variable &v) const { return Value(v); }
-
-void BranchChannel::Set(const Variable &v, double value) {
-  branch->CheckMutable();
-  ApplyT([&v, value](auto entity_ptr) -> void {
-    Impl::SetValue(v, *entity_ptr, value);
-  });
-}
 
 void BranchChannel::UpdateChannel(size_t new_channel) {
   i_channel = new_channel;

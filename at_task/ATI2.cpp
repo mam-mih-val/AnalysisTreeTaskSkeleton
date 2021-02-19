@@ -14,9 +14,9 @@ void BranchChannel::Print(std::ostream &os) const {
   os << "Branch " << branch->config.GetName() << " channel #" << i_channel << std::endl;
 }
 
-BranchLoopIter BranchLoop::begin() const { return branch->ChannelsBegin(); }
+BranchChannelsIter BranchChannelsLoop::begin() const { return branch->ChannelsBegin(); }
 
-BranchLoopIter BranchLoop::end() const { return branch->ChannelsEnd(); }
+BranchChannelsIter BranchChannelsLoop::end() const { return branch->ChannelsEnd(); }
 Variable Branch::GetVar(const std::string &field_name) {
   ATI2::Variable v;
   v.parent_branch = this;
@@ -153,7 +153,7 @@ void BranchChannel::UpdatePointer() {
     data_ptr = nullptr;
   }
 }
-BranchLoopIter &BranchLoopIter::operator++() {
+BranchChannelsIter &BranchChannelsIter::operator++() {
   i_channel++;
   current_channel->UpdateChannel(i_channel);
   return *this;

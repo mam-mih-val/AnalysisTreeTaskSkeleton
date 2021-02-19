@@ -15,10 +15,10 @@ namespace ATI2 {
 
 class Variable;
 struct Branch;
-class BranchChannel;
-struct BranchLoop;
-struct BranchLoopIter;
 class ValueHolder;
+class BranchChannel;
+struct BranchChannelsLoop;
+struct BranchChannelsIter;
 
 class BranchChannel {
  public:
@@ -32,7 +32,7 @@ class BranchChannel {
 
  private:
   friend Branch;
-  friend BranchLoopIter;
+  friend BranchChannelsIter;
 
   BranchChannel(Branch *branch, size_t i_channel);
   void UpdatePointer();
@@ -43,17 +43,17 @@ class BranchChannel {
   size_t i_channel;
 };
 
-struct BranchLoopIter {
-  BranchLoopIter(Branch *branch, size_t i_channel) :
+struct BranchChannelsIter {
+  BranchChannelsIter(Branch *branch, size_t i_channel) :
       branch(branch), i_channel(i_channel) {
     current_channel.reset(new BranchChannel(branch, i_channel));
   }
 
-  bool operator==(const BranchLoopIter &rhs) const {
+  bool operator==(const BranchChannelsIter &rhs) const {
     return i_channel == rhs.i_channel &&
         branch == rhs.branch;
   }
-  bool operator!=(const BranchLoopIter &rhs) const {
+  bool operator!=(const BranchChannelsIter &rhs) const {
     return !(rhs == *this);
   }
   BranchChannel operator*() const {
@@ -62,19 +62,19 @@ struct BranchLoopIter {
   BranchChannel &operator*() {
     return current_channel.operator*();
   }
-  BranchLoopIter &operator++();
+  BranchChannelsIter &operator++();
 
   std::unique_ptr<BranchChannel> current_channel;
   Branch *branch;
   size_t i_channel;
 };
 
-struct BranchLoop {
-  explicit BranchLoop(Branch *branch) : branch(branch) {}
+struct BranchChannelsLoop {
+  explicit BranchChannelsLoop(Branch *branch) : branch(branch) {}
   Branch *branch{nullptr};
 
-  BranchLoopIter begin() const;
-  BranchLoopIter end() const;
+  BranchChannelsIter begin() const;
+  BranchChannelsIter end() const;
 };
 
 struct Branch {
@@ -98,9 +98,9 @@ struct Branch {
   /* iterating */
   size_t size() const;
   BranchChannel operator[](size_t i_channel);
-  BranchLoop Loop() { return BranchLoop(this); };
-  BranchLoopIter ChannelsBegin() { return BranchLoopIter(this, 0); };
-  BranchLoopIter ChannelsEnd() { return BranchLoopIter(this, size()); };
+  BranchChannelsLoop Loop() { return BranchChannelsLoop(this); };
+  BranchChannelsIter ChannelsBegin() { return BranchChannelsIter(this, 0); };
+  BranchChannelsIter ChannelsEnd() { return BranchChannelsIter(this, size()); };
 
   /* Modification */
   void Freeze(bool freeze = true) { is_frozen = freeze; };

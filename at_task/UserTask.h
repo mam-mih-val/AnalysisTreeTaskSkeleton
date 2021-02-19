@@ -87,18 +87,17 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
     return branch.GetFieldId(field_name);
   }
 
-  void ReadMap(std::map<std::string, void *> &map);
-
  public:
 
+  void ReadMap(std::map<std::string, void *> &map);
   ATI2::Branch *GetInBranch(const std::string &name) const { return branches_in_.at(name).get(); }
   ATI2::Branch *GetOutBranch(const std::string &name) const { return branches_out_.at(name).get(); }
   ATI2::Variable GetVar(const std::string &name) const;
 
-  static std::pair<std::string, std::string> ParseVarName(const std::string &variable_name);
-
   std::map<std::string, std::unique_ptr<ATI2::Branch>> branches_in_;
   std::map<std::string, std::unique_ptr<ATI2::Branch>> branches_out_;
+
+  static std::pair<std::string, std::string> ParseVarName(const std::string &variable_name);
 
 };
 

@@ -22,7 +22,6 @@ class ValueHolder;
 
 class BranchChannel {
  public:
-
   /* Getting value */
   ValueHolder Value(const Variable &v) const;
   ValueHolder operator[](const Variable &v) const;
@@ -208,9 +207,12 @@ class ValueHolder {
   friend BranchChannel;
 
   ValueHolder(const Variable &v, void *data_ptr)
-      : v(v), data_ptr(data_ptr) {}
+      : v(v), data_ptr(data_ptr) {
+    entity_type = v.GetParentBranch()->config.GetType();
+  }
 
   const Variable &v;
+  AnalysisTree::DetType entity_type;
   void *data_ptr;
 };
 

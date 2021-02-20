@@ -32,7 +32,7 @@ class BranchChannel {
    * @param other
    * @return
    */
-  BranchChannel &operator= (const BranchChannel &other); // TODO
+  void CopyContents(const BranchChannel &other);
 
   void Print(std::ostream &os = std::cout) const;
 
@@ -128,6 +128,8 @@ struct Branch {
   void ClearChannels();
   Variable NewVariable(const std::string &field_name, AnalysisTree::Types type);
   void CopyContents(Branch *br);
+
+  void CreateMapping(Branch *other);;
 
   template<typename EntityPtr>
   constexpr static const bool is_event_header_v =

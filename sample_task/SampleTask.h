@@ -84,16 +84,17 @@ public:
     vtx_x = GetVar("RecEventHeader/vtx_x");
     vtx_x.Print();
 
-    vtx_tracks = GetInBranch("VtxTracks");
+    vtx_tracks_branch = GetInBranch("VtxTracks");
 
     dca_x = GetVar("VtxTracks/dcax");
     dca_x.Print();
 
-    NewBranch("test", AnalysisTree::DetType::kParticle);
+    NewBranch("ProcessedTracks", AnalysisTree::DetType::kTrack);
 
-    test_branch = GetOutBranch("test");
-    test_field1 = test_branch->NewVariable("field1", AnalysisTree::Types::kFloat);
-    vtx_tracks_branch = GetInBranch("VtxTracks");
+    processed_tracks_branch = GetOutBranch("ProcessedTracks");
+    /* We will take dcax/y from VtxTracks */
+    processed_tracks_dcax = processed_tracks_branch->NewVariable("dcax", AnalysisTree::Types::kFloat);
+    processed_tracks_dcax = processed_tracks_branch->NewVariable("dcay", AnalysisTree::Types::kFloat);
 
     NewBranch("test_event_header", AnalysisTree::DetType::kEventHeader);
     test_event_header = GetOutBranch("test_event_header");
@@ -113,15 +114,15 @@ public:
     auto vtx_x_val = *vtx_x;
 //    std::cout << float(vtx_x_val) << std::endl;
 
-    test_branch->ClearChannels();
 
 //    std::cout << dca_x.Get<float>() << std::endl; /* not implemented */
 //    GetBranch("RecEventHeader")->size(); /* not implemented */
 
-    for (auto &track : vtx_tracks->Loop()) {
-//      track.Print();
-      auto channel = test_branch->NewChannel();
-      channel[test_field1] = track[dca_x];
+    processed_tracks_branch->ClearChannels();
+    /* abilities of BranchChannel */
+    for (auto &vtx_track : vtx_tracks_branch->Loop()) {
+      auto channel = processed_tracks_branch->NewChannel();
+      channel.CopyContents(vtx_track);
     }
 
   }
@@ -137,10 +138,9 @@ private:
 
   ATI2::Variable vtx_x;
 
-  ATI2::Branch *vtx_tracks;
   ATI2::Variable dca_x;
-  ATI2::Branch *test_branch;
-  ATI2::Variable test_field1;
+  ATI2::Branch *processed_tracks_branch;
+  ATI2::Variable processed_tracks_dcax;
   ATI2::Branch *vtx_tracks_branch;
 
  TASK_DEF(BarTask, 1);

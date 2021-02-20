@@ -152,9 +152,7 @@ void Branch::CopyContents(Branch *other) {
   if (this == other) {
     throw std::runtime_error("Copying contents from the same branch makes no sense");
   }
-  CheckFrozen();
   CheckMutable();
-  other->CheckFrozen();
 
   if (other->config.GetType() != config.GetType()) {
     throw std::runtime_error("Branch types must be the same");
@@ -165,27 +163,36 @@ void Branch::CopyContents(Branch *other) {
 
   auto mapping_it = copy_fields_mapping.find(other);
   if (mapping_it == copy_fields_mapping.end()) {
-    /* new mapping is needed */
-
-    std::cout << "New mapping " << other->config.GetName() << " --> " << config.GetName() << std::endl;
-    FieldsMapping fields_mapping;
-    for (auto &field_name : other->GetFieldNames()) {
-      if (!HasField(field_name)) { continue; }
-      fields_mapping.field_pairs.emplace_back(std::make_pair(other->GetFieldVar(field_name), GetFieldVar(field_name)));
-      std::cout << "\t" << field_name << std::endl;
-    }
-    copy_fields_mapping.emplace(other, std::move(fields_mapping));
+    CreateMapping(other);
     mapping_it = copy_fields_mapping.find(other);
   }
 
   /* evaluate mapping */
   auto src_branch = mapping_it->first;
-  const auto mapping = mapping_it->second;
+  const auto& mapping = mapping_it->second;
 
   for (auto &field_pair /* src : dst */: mapping.field_pairs) {
     this->Value(field_pair.second) = src_branch->Value(field_pair.first);
   }
 
+}
+void Branch::CreateMapping(Branch *other) {
+  if (copy_fields_mapping.find(other) != copy_fields_mapping.end()) {
+    // TODO Warning
+    return;
+  }
+
+  CheckFrozen();
+  other->CheckFrozen();
+
+  std::cout << "New mapping " << other->config.GetName() << " --> " << config.GetName() << std::endl;
+  FieldsMapping fields_mapping;
+  for (auto &field_name : other->GetFieldNames()) {
+    if (!HasField(field_name)) { continue; }
+    fields_mapping.field_pairs.emplace_back(std::make_pair(other->GetFieldVar(field_name), GetFieldVar(field_name)));
+    std::cout << "\t" << field_name << std::endl;
+  }
+  copy_fields_mapping.emplace(other, std::move(fields_mapping));
 }
 
 ValueHolder ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
@@ -210,6 +217,23 @@ void BranchChannel::UpdatePointer() {
   } else {
     data_ptr = nullptr;
   }
+}
+void BranchChannel::CopyContents(const BranchChannel &other) {
+  branch->CheckMutable();
+
+  auto mapping_it = branch->copy_fields_mapping.find(other.branch);
+  if (mapping_it == branch->copy_fields_mapping.end()) {
+    branch->CreateMapping(other.branch);
+    mapping_it = branch->copy_fields_mapping.find(other.branch);
+  }
+
+  /* Eval mapping */
+  const auto &field_pairs = mapping_it->second.field_pairs;
+
+  for (auto &field_pair /* src : dst */ : field_pairs) {
+    this->Value(field_pair.second) = other.Value(field_pair.first);
+  }
+
 }
 
 BranchChannelsIter &BranchChannelsIter::operator++() {

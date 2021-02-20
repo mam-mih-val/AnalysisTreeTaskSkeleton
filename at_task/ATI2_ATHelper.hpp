@@ -6,6 +6,7 @@
 #define ATTASKSKELETON_AT_TASK_ATI2_ATHELPER_HPP_
 
 #include <AnalysisTree/EventHeader.hpp>
+#include <AnalysisTree/Track.hpp>
 
 namespace ATI2 {
 
@@ -33,6 +34,28 @@ void SetField(AnalysisTree::EventHeader *event_header, short field_id, Value val
     }
   }
 }
+
+template<typename Value>
+void SetField(AnalysisTree::Track *track, short field_id, Value value) {
+  using AnalysisTree::TrackFields::TrackFields;
+  if (field_id >= 0) {
+    track->template SetField(value, field_id);
+  } else {
+    switch (field_id) {
+      case TrackFields::kPx: track->SetMomentum3({value, track->GetPy(), track->GetPz()}); break;
+      case TrackFields::kPy: track->SetMomentum3({track->GetPx(), value, track->GetPz()}); break;
+      case TrackFields::kPz: track->SetMomentum3({track->GetPx(), track->GetPy(), value}); break;
+      case TrackFields::kP:
+      case TrackFields::kPt:
+      case TrackFields::kEta:
+      case TrackFields::kPhi: /* transient fields, ignoring */ break;
+      default: throw std::runtime_error("Unknown field");
+    }
+
+  }
+
+}
+
 
 }
 

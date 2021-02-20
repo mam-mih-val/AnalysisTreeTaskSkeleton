@@ -165,11 +165,13 @@ void Branch::CopyContents(Branch *other) {
   auto mapping_it = copy_fields_mapping.find(other);
   if (mapping_it == copy_fields_mapping.end()) {
     /* new mapping is needed */
-    /// TODO debug message
+
+    std::cout << "New mapping " << other->config.GetName() << " --> " << config.GetName() << std::endl;
     FieldsMapping fields_mapping;
     for (auto &field_name : other->GetFieldNames()) {
       if (!HasField(field_name)) { continue; }
-      fields_mapping.mapping.emplace_back(std::make_pair(other->GetFieldVar(field_name), GetFieldVar(field_name)));
+      fields_mapping.field_pairs.emplace_back(std::make_pair(other->GetFieldVar(field_name), GetFieldVar(field_name)));
+      std::cout << "\t" << field_name << std::endl;
     }
     copy_fields_mapping.emplace(other, std::move(fields_mapping));
     mapping_it = copy_fields_mapping.find(other);
@@ -179,7 +181,7 @@ void Branch::CopyContents(Branch *other) {
   auto src_branch = mapping_it->first;
   const auto mapping = mapping_it->second;
 
-  for (auto &field_pair /* src : dst */: mapping.mapping) {
+  for (auto &field_pair /* src : dst */: mapping.field_pairs) {
     this->Value(field_pair.second) = src_branch->Value(field_pair.first);
   }
 

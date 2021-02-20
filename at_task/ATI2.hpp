@@ -88,7 +88,7 @@ struct Branch {
 
   struct FieldsMapping {
 
-    std::vector<std::pair<Variable /* src */, Variable /* dst */>> mapping;
+    std::vector<std::pair<Variable /* src */, Variable /* dst */>> field_pairs;
   };
 
 

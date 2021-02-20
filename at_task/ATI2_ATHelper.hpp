@@ -87,6 +87,44 @@ void SetField(AnalysisTree::Particle *particle, Int_t field_id, Value value) {
 
 }
 
+template<typename Value>
+void SetField(AnalysisTree::Hit *hit, Int_t field_id, Value value) {
+  using AnalysisTree::HitFields::HitFields;
+
+  if (field_id >= 0) {
+    hit->template SetField(value, field_id);
+  } else {
+    switch (field_id) {
+      case HitFields::kX: hit->SetPosition(double(value), hit->GetY(), hit->GetZ());
+        break;
+      case HitFields::kY: hit->SetPosition(hit->GetX(), double(value), hit->GetZ());
+        break;
+      case HitFields::kZ: hit->SetPosition(hit->GetX(), hit->GetY(), double(value));
+        break;
+      case HitFields::kSignal: hit->SetSignal(double(value));
+      case HitFields::kPhi: /* transient fields, ignoring */ break;
+      default: throw std::runtime_error("Unknown field");
+    }
+  }
+}
+
+template<typename Value>
+void SetField(AnalysisTree::Module *module, Int_t field_id, Value value) {
+  using AnalysisTree::ModuleFields::ModuleFields;
+
+  if (field_id >= 0) {
+    module->template SetField(value, field_id);
+  } else {
+    switch (field_id) {
+      case ModuleFields::kSignal: module->SetSignal(float(value));
+        break;
+      case ModuleFields::kNumber: module->SetNumber(short(value));
+        break;
+      default: throw std::runtime_error("Unknown field");
+    }
+  }
+}
+
 } // namespace ATHelper
 
 } // namespace ATI2

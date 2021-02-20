@@ -94,7 +94,7 @@ public:
     processed_tracks_branch = GetOutBranch("ProcessedTracks");
     /* We will take dcax/y from VtxTracks */
     processed_tracks_dcax = processed_tracks_branch->NewVariable("dcax", AnalysisTree::Types::kFloat);
-    processed_tracks_dcax = processed_tracks_branch->NewVariable("dcay", AnalysisTree::Types::kFloat);
+//    processed_tracks_dcay = processed_tracks_branch->NewVariable("dcay", AnalysisTree::Types::kFloat);
 
     NewBranch("test_event_header", AnalysisTree::DetType::kEventHeader);
     test_event_header = GetOutBranch("test_event_header");
@@ -108,8 +108,8 @@ public:
 
     /* Abilities of ATI2::Branch */
     test_event_header->CopyContents(rec_event_header);
-    std::cout << (*rec_event_header)[rec_event_header_vtx_x] << "\t"
-              << (*test_event_header)[test_event_header_vtx_x] << std::endl;
+//    std::cout << (*rec_event_header)[rec_event_header_vtx_x] << "\t"
+//              << (*test_event_header)[test_event_header_vtx_x] << std::endl;
 
 
 
@@ -125,10 +125,10 @@ public:
     /* abilities of BranchChannel */
     for (auto &vtx_track : vtx_tracks_branch->Loop()) {
       auto processed_track = processed_tracks_branch->NewChannel();
-      std::cout << "Current size " << processed_tracks_branch->size() << std::endl;
+//      std::cout << "Current size " << processed_tracks_branch->size() << std::endl;
       processed_track.CopyContents(vtx_track);
-      std::cout << vtx_track[vtxtracks_dca_x].GetVal() << "\t"
-                << processed_track[processed_tracks_dcax].GetVal() << std::endl;
+//      std::cout << vtx_track[vtxtracks_dca_x].GetVal() << "\t"
+//                << processed_track[processed_tracks_dcax].GetVal() << std::endl;
     }
 
   }

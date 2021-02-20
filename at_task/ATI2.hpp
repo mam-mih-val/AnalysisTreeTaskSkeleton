@@ -91,10 +91,12 @@ struct Branch {
     std::vector<std::pair<Variable /* src */, Variable /* dst */>> field_pairs;
   };
 
+  ~Branch();
+
 
   AnalysisTree::BranchConfig config;
   AnalysisTree::Configuration *parent_config;
-  void *data{nullptr};
+  void *data{nullptr}; /// owns object
   bool is_connected_to_input{false};
   bool is_connected_to_output{false};
   bool is_mutable{false};

@@ -32,6 +32,12 @@ Variable Branch::GetFieldVar(const std::string &field_name) {
   return v;
 }
 
+Branch::~Branch() {
+  ApplyT([this] (auto entry_ptr) {
+      delete entry_ptr;
+  });
+}
+
 void Branch::ConnectOutputTree(TTree *tree) {
   is_connected_to_output = ApplyT([this, tree](auto entity) -> bool {
     if (!tree)
@@ -41,6 +47,7 @@ void Branch::ConnectOutputTree(TTree *tree) {
     return bool(new_tree_branch_ptr);
   });
 }
+
 void Branch::InitDataPtr() {
   ApplyT([this](auto entity) {
     if (entity)
@@ -64,7 +71,6 @@ BranchChannel::BranchChannel(Branch *branch, size_t i_channel) : branch(branch),
 }
 
 BranchChannel Branch::operator[](size_t i_channel) { return BranchChannel(this, i_channel); }
-
 BranchChannel Branch::NewChannel() {
   CheckMutable(true);
   ApplyT([this](auto entity_ptr) {
@@ -78,6 +84,7 @@ BranchChannel Branch::NewChannel() {
   });
   return operator[](size() - 1);
 }
+
 Variable Branch::NewVariable(const std::string &field_name, AnalysisTree::Types type) {
   CheckFrozen(false);
   CheckMutable(true);
@@ -114,16 +121,15 @@ void Branch::ClearChannels() {
     }
   });
 }
-
 void Branch::CheckFrozen(bool expected) const {
   if (is_frozen != expected)
     throw std::runtime_error("Branch is frozen");
 }
+
 void Branch::CheckMutable(bool expected) const {
   if (is_mutable != expected)
     throw std::runtime_error("Branch is not mutable");
 }
-
 ValueHolder Branch::Value(const Variable &v) const {
   assert(v.GetParentBranch() == this);
   if (config.GetType() == AnalysisTree::DetType::kEventHeader) {
@@ -131,8 +137,8 @@ ValueHolder Branch::Value(const Variable &v) const {
   }
   throw std::runtime_error("Not implemented for iterable branch");
 }
-ValueHolder Branch::operator[](const Variable &v) const { return Value(v); }
 
+ValueHolder Branch::operator[](const Variable &v) const { return Value(v); }
 bool Branch::HasField(const std::string &field_name) const {
   auto field_id = config.GetFieldId(field_name);
   return field_id != AnalysisTree::UndefValueShort;

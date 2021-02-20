@@ -89,7 +89,7 @@ public:
     vtxtracks_dca_x = GetVar("VtxTracks/dcax");
     vtxtracks_dca_x.Print();
 
-    NewBranch("ProcessedTracks", AnalysisTree::DetType::kTrack);
+    NewBranch("ProcessedTracks", AnalysisTree::DetType::kParticle);
 
     processed_tracks_branch = GetOutBranch("ProcessedTracks");
     /* We will take dcax/y from VtxTracks */

@@ -7,6 +7,7 @@
 #include <TTree.h>
 
 #include "ATI2.hpp"
+#include "ATI2_ATHelper.hpp"
 
 using namespace ATI2;
 
@@ -269,13 +270,13 @@ void SetValue(const Variable &v, Entity *e, ValueType new_value) {
   using AnalysisTree::Types;
 
   if (v.GetFieldType() == Types::kFloat) {
-    e->template SetField<float>(new_value, v.GetId());
+    ATHelper::SetField(e, v.GetId(), float(new_value));
     return;
   } else if (v.GetFieldType() == Types::kInteger) {
-    e->template SetField<int>(new_value, v.GetId());
+    ATHelper::SetField(e, v.GetId(), int(new_value));
     return;
   } else if (v.GetFieldType() == Types::kBool) {
-    e->template SetField<bool>(new_value, v.GetId());
+    ATHelper::SetField(e, v.GetId(), bool(new_value));
     return;
   }
   /* unreachable */

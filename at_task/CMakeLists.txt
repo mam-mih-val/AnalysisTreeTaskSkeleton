@@ -13,7 +13,7 @@ list(APPEND HEADERS
         Task.h
         )
 
-add_library(at_task STATIC ${SOURCES} ${HEADERS} StaticTaskRegistry.h ATI2.hpp ATI2.cpp)
+add_library(at_task STATIC ${SOURCES} ${HEADERS} StaticTaskRegistry.h ATI2.hpp ATI2.cpp ATI2_ATHelper.hpp)
 target_link_libraries(at_task  PUBLIC
         AnalysisTreeBase
         AnalysisTreeInfra

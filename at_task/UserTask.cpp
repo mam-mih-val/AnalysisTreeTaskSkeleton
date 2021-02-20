@@ -70,7 +70,7 @@ void UserFillTask::ReadMap(std::map<std::string, void *>& map) {
     branch->data = data_ptr;
     branch->parent_config = config_;
     branch->is_connected_to_input = true;
-    branch->is_mutable = true;
+    branch->is_mutable = false;
     branch->Freeze();
     branches_in_.emplace(branch_name, std::move(branch));
   }
@@ -80,5 +80,5 @@ void UserFillTask::ReadMap(std::map<std::string, void *>& map) {
 
 ATI2::Variable UserFillTask::GetVar(const std::string &name) const {
   auto &&[br_name, f_name] = ParseVarName(name);
-  return GetInBranch(br_name)->GetVar(f_name);
+  return GetInBranch(br_name)->GetFieldVar(f_name);
 }

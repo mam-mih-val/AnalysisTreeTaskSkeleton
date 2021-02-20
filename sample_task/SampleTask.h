@@ -80,6 +80,7 @@ public:
   void Init(std::map<std::string, void *> &Map) override {
     ReadMap(Map);
 
+
     vtx_x = GetVar("RecEventHeader/vtx_x");
     vtx_x.Print();
 
@@ -94,9 +95,20 @@ public:
     test_field1 = test_branch->NewVariable("field1", AnalysisTree::Types::kFloat);
     vtx_tracks_branch = GetInBranch("VtxTracks");
 
+    NewBranch("test_event_header", AnalysisTree::DetType::kEventHeader);
+    test_event_header = GetOutBranch("test_event_header");
+    rec_event_header = GetInBranch("RecEventHeader");
+
+    test_event_header->Freeze(); /* No more structural changes */
 
   }
   void Exec() override {
+
+    /* Abilities of ATI2::Branch */
+    test_event_header->CopyContents(rec_event_header);
+
+
+
 
     auto vtx_x_val = *vtx_x;
 //    std::cout << float(vtx_x_val) << std::endl;
@@ -119,6 +131,9 @@ public:
 
 private:
   AnalysisTree::Container *centrality_{nullptr};
+
+  ATI2::Branch *rec_event_header{nullptr};
+  ATI2::Branch *test_event_header{nullptr};
 
   ATI2::Variable vtx_x;
 

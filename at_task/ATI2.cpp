@@ -14,10 +14,11 @@ void BranchChannel::Print(std::ostream &os) const {
   os << "Branch " << branch->config.GetName() << " channel #" << i_channel << std::endl;
 }
 
-BranchChannelsIter BranchChannelsLoop::begin() const { return branch->ChannelsBegin(); }
+BranchChannelsIter Branch::BranchChannelsLoop::begin() const { return branch->ChannelsBegin(); }
 
-BranchChannelsIter BranchChannelsLoop::end() const { return branch->ChannelsEnd(); }
-Variable Branch::GetVar(const std::string &field_name) {
+BranchChannelsIter Branch::BranchChannelsLoop::end() const { return branch->ChannelsEnd(); }
+
+Variable Branch::GetFieldVar(const std::string &field_name) {
   ATI2::Variable v;
   v.parent_branch = this;
   v.id = v.parent_branch->config.GetFieldId(field_name);
@@ -130,6 +131,60 @@ ValueHolder Branch::Value(const Variable &v) const {
 }
 ValueHolder Branch::operator[](const Variable &v) const { return Value(v); }
 
+bool Branch::HasField(const std::string &field_name) const {
+  auto field_id = config.GetFieldId(field_name);
+  return field_id != AnalysisTree::UndefValueShort;
+}
+std::vector<std::string> Branch::GetFieldNames() const {
+  std::vector<std::string> result;
+  auto fill_vector_from_map = [&result] (const std::map<std::string, short> &fields_map) -> void {
+    for (auto &element : fields_map) {
+      result.push_back(element.first);
+    }
+  };
+  fill_vector_from_map(config.GetMap<float>());
+  fill_vector_from_map(config.GetMap<int>());
+  fill_vector_from_map(config.GetMap<bool>());
+  return result;
+}
+void Branch::CopyContents(Branch *other) {
+  if (this == other) {
+    throw std::runtime_error("Copying contents from the same branch makes no sense");
+  }
+  CheckFrozen();
+  CheckMutable();
+  other->CheckFrozen();
+
+  if (other->config.GetType() != config.GetType()) {
+    throw std::runtime_error("Branch types must be the same");
+  }
+  if (config.GetType() != AnalysisTree::DetType::kEventHeader) {
+    throw std::runtime_error("Only EventHeader is available for Branch::CopyContents");
+  }
+
+  auto mapping_it = copy_fields_mapping.find(other);
+  if (mapping_it == copy_fields_mapping.end()) {
+    /* new mapping is needed */
+    /// TODO debug message
+    FieldsMapping fields_mapping;
+    for (auto &field_name : other->GetFieldNames()) {
+      if (!HasField(field_name)) { continue; }
+      fields_mapping.mapping.emplace_back(std::make_pair(other->GetFieldVar(field_name), GetFieldVar(field_name)));
+    }
+    copy_fields_mapping.emplace(other, std::move(fields_mapping));
+    mapping_it = copy_fields_mapping.find(other);
+  }
+
+  /* evaluate mapping */
+  auto src_branch = mapping_it->first;
+  const auto mapping = mapping_it->second;
+
+  for (auto &field_pair /* src : dst */: mapping.mapping) {
+    this->Value(field_pair.second) = src_branch->Value(field_pair.first);
+  }
+
+}
+
 ValueHolder ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
   return ValueHolder(v, data_ptr);
 }
@@ -153,6 +208,7 @@ void BranchChannel::UpdatePointer() {
     data_ptr = nullptr;
   }
 }
+
 BranchChannelsIter &BranchChannelsIter::operator++() {
   i_channel++;
   current_channel->UpdateChannel(i_channel);

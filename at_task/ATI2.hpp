@@ -17,7 +17,6 @@ class Variable;
 struct Branch;
 class ValueHolder;
 class BranchChannel;
-struct BranchChannelsLoop;
 struct BranchChannelsIter;
 
 class BranchChannel {
@@ -27,6 +26,13 @@ class BranchChannel {
   ValueHolder operator[](const Variable &v) const;
   void *Data() { return data_ptr; }
   const void *Data() const { return data_ptr; }
+
+  /**
+   * @brief Copy contents of other branch channel
+   * @param other
+   * @return
+   */
+  BranchChannel &operator= (const BranchChannel &other); // TODO
 
   void Print(std::ostream &os = std::cout) const;
 
@@ -69,15 +75,23 @@ struct BranchChannelsIter {
   size_t i_channel;
 };
 
-struct BranchChannelsLoop {
-  explicit BranchChannelsLoop(Branch *branch) : branch(branch) {}
-  Branch *branch{nullptr};
 
-  BranchChannelsIter begin() const;
-  BranchChannelsIter end() const;
-};
 
 struct Branch {
+  struct BranchChannelsLoop {
+    explicit BranchChannelsLoop(Branch *branch) : branch(branch) {}
+    Branch *branch{nullptr};
+
+    BranchChannelsIter begin() const;
+    BranchChannelsIter end() const;
+  };
+
+  struct FieldsMapping {
+
+    std::vector<std::pair<Variable /* src */, Variable /* dst */>> mapping;
+  };
+
+
   AnalysisTree::BranchConfig config;
   AnalysisTree::Configuration *parent_config;
   void *data{nullptr};
@@ -86,10 +100,14 @@ struct Branch {
   bool is_mutable{false};
   bool is_frozen{false};
 
+  std::map<const Branch* /* other branch */, FieldsMapping> copy_fields_mapping;
+
   void InitDataPtr();
   void ConnectOutputTree(TTree *tree);
 
-  Variable GetVar(const std::string &field_name);
+  Variable GetFieldVar(const std::string &field_name);
+  bool HasField(const std::string &field_name) const;
+  std::vector<std::string> GetFieldNames() const;
 
   /* Getting value */
   ValueHolder Value(const Variable &v) const;
@@ -109,6 +127,7 @@ struct Branch {
   BranchChannel NewChannel();
   void ClearChannels();
   Variable NewVariable(const std::string &field_name, AnalysisTree::Types type);
+  void CopyContents(Branch *br);
 
   template<typename EntityPtr>
   constexpr static const bool is_event_header_v =

@@ -125,6 +125,7 @@ void Branch::CheckMutable(bool expected) const {
 }
 
 ValueHolder Branch::Value(const Variable &v) const {
+  assert(v.GetParentBranch() == this);
   if (config.GetType() == AnalysisTree::DetType::kEventHeader) {
     return ValueHolder(v, data);
   }
@@ -196,6 +197,7 @@ void Branch::CreateMapping(Branch *other) {
 }
 
 ValueHolder ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
+  assert(v.GetParentBranch() == branch);
   return ValueHolder(v, data_ptr);
 }
 
@@ -211,7 +213,7 @@ void BranchChannel::UpdatePointer() {
       if constexpr (Branch::is_event_header_v<decltype(entity_ptr)>) {
         throw std::runtime_error("Getting channel of the EventHeader is not implemented");
       } else {
-        return &entity_ptr->GetChannel(this->i_channel);
+        return &(entity_ptr->Channels()->data()[i_channel]);
       }
     });
   } else {
@@ -358,11 +360,11 @@ ValueHolder &ValueHolder::operator=(const ValueHolder &other) {
 
   using AnalysisTree::Types;
   if (other.v.GetFieldType() == Types::kFloat) {
-    SetVal(other.GetVal());
+    this->SetVal(other.GetVal());
   } else if (other.v.GetFieldType() == Types::kInteger) {
-    SetVal(other.GetInt());
+    this->SetVal(other.GetInt());
   } else if (other.v.GetFieldType() == Types::kBool) {
-    SetVal(other.GetBool());
+    this->SetVal(other.GetBool());
   } else {
     /* unreachable */
     assert(false);

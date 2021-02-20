@@ -81,13 +81,13 @@ public:
     ReadMap(Map);
 
 
-    vtx_x = GetVar("RecEventHeader/vtx_x");
-    vtx_x.Print();
+    rec_event_header_vtx_x = GetVar("RecEventHeader/vtx_x");
+    rec_event_header_vtx_x.Print();
 
     vtx_tracks_branch = GetInBranch("VtxTracks");
 
-    dca_x = GetVar("VtxTracks/dcax");
-    dca_x.Print();
+    vtxtracks_dca_x = GetVar("VtxTracks/dcax");
+    vtxtracks_dca_x.Print();
 
     NewBranch("ProcessedTracks", AnalysisTree::DetType::kTrack);
 
@@ -98,6 +98,7 @@ public:
 
     NewBranch("test_event_header", AnalysisTree::DetType::kEventHeader);
     test_event_header = GetOutBranch("test_event_header");
+    test_event_header_vtx_x = test_event_header->GetFieldVar("vtx_x");
     rec_event_header = GetInBranch("RecEventHeader");
 
     test_event_header->Freeze(); /* No more structural changes */
@@ -107,11 +108,13 @@ public:
 
     /* Abilities of ATI2::Branch */
     test_event_header->CopyContents(rec_event_header);
+    std::cout << (*rec_event_header)[rec_event_header_vtx_x] << "\t"
+              << (*test_event_header)[test_event_header_vtx_x] << std::endl;
 
 
 
 
-    auto vtx_x_val = *vtx_x;
+    auto vtx_x_val = *rec_event_header_vtx_x;
 //    std::cout << float(vtx_x_val) << std::endl;
 
 
@@ -121,8 +124,11 @@ public:
     processed_tracks_branch->ClearChannels();
     /* abilities of BranchChannel */
     for (auto &vtx_track : vtx_tracks_branch->Loop()) {
-      auto channel = processed_tracks_branch->NewChannel();
-      channel.CopyContents(vtx_track);
+      auto processed_track = processed_tracks_branch->NewChannel();
+      std::cout << "Current size " << processed_tracks_branch->size() << std::endl;
+      processed_track.CopyContents(vtx_track);
+      std::cout << vtx_track[vtxtracks_dca_x].GetVal() << "\t"
+                << processed_track[processed_tracks_dcax].GetVal() << std::endl;
     }
 
   }
@@ -134,15 +140,16 @@ private:
   AnalysisTree::Container *centrality_{nullptr};
 
   ATI2::Branch *rec_event_header{nullptr};
+  ATI2::Variable rec_event_header_vtx_x;
+
   ATI2::Branch *test_event_header{nullptr};
 
-  ATI2::Variable vtx_x;
-
-  ATI2::Variable dca_x;
+  ATI2::Variable test_event_header_vtx_x;
+  ATI2::Variable vtxtracks_dca_x;
   ATI2::Branch *processed_tracks_branch;
   ATI2::Variable processed_tracks_dcax;
-  ATI2::Branch *vtx_tracks_branch;
 
+  ATI2::Branch *vtx_tracks_branch;
  TASK_DEF(BarTask, 1);
 };
 

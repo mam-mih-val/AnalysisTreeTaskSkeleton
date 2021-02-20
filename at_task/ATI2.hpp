@@ -100,6 +100,8 @@ struct Branch {
   bool is_mutable{false};
   bool is_frozen{false};
 
+
+
   std::map<const Branch* /* other branch */, FieldsMapping> copy_fields_mapping;
 
   void InitDataPtr();
@@ -184,7 +186,7 @@ class Variable {
   Branch *GetParentBranch() const {
     return parent_branch;
   }
-  short GetId() const {
+  int GetId() const {
     return id;
   }
   AnalysisTree::Types GetFieldType() const {
@@ -202,7 +204,7 @@ class Variable {
 
   Branch *parent_branch{nullptr};
 
-  short id{0};
+  int id{0};
   AnalysisTree::Types field_type{AnalysisTree::Types::kNumberOfTypes};
   std::string name;
   std::string field_name;

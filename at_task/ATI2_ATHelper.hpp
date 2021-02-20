@@ -13,12 +13,12 @@ namespace ATI2 {
 namespace ATHelper {
 
 template<typename Entity, typename Value>
-void SetField(Entity *data_ptr, short field_id, Value value) {
+void SetField(Entity *data_ptr, Int_t field_id, Value value) {
   data_ptr->SetField(value, field_id);
 };
 
 template<typename Value>
-void SetField(AnalysisTree::EventHeader *event_header, short field_id, Value value) {
+void SetField(AnalysisTree::EventHeader *event_header, Int_t field_id, Value value) {
   using AnalysisTree::EventHeaderFields::EventHeaderFields;
   if (field_id >= 0) {
     event_header->template SetField(value, field_id);
@@ -36,7 +36,7 @@ void SetField(AnalysisTree::EventHeader *event_header, short field_id, Value val
 }
 
 template<typename Value>
-void SetField(AnalysisTree::Track *track, short field_id, Value value) {
+void SetField(AnalysisTree::Track *track, Int_t field_id, Value value) {
   using AnalysisTree::TrackFields::TrackFields;
   if (field_id >= 0) {
     track->template SetField(value, field_id);

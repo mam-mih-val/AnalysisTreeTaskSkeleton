@@ -89,8 +89,14 @@ class BranchChannel {
     return ValueHolder(v, data_ptr);
   }
   inline ValueHolder operator[](const Variable &v) const { return Value(v); };
+
+  /* usage of this functions is highly discouraged */
   void *Data() { return data_ptr; }
   const void *Data() const { return data_ptr; }
+  template<typename T>
+  T *DataT() { return reinterpret_cast<T *>(data_ptr); }
+  template<typename T>
+  const T *DataT() const { return reinterpret_cast<T *>(data_ptr); }
 
   /**
    * @brief Copy contents of other branch channel

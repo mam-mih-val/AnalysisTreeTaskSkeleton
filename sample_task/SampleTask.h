@@ -24,7 +24,7 @@ public:
 
   }
 
-  void UserInit() override {
+  void UserInit(std::map<std::string, void *> & /* map */) override {
 
   }
   void UserExec() override {
@@ -47,7 +47,7 @@ public:
     std::cout << foo_task->GetName() << std::endl;
   }
 
-  void UserInit() override {
+  void UserInit(std::map<std::string, void *> & /* map */) override {
 
     rec_event_header_vtx_x = GetVar("RecEventHeader/vtx_x");
     rec_event_header_vtx_x.Print();

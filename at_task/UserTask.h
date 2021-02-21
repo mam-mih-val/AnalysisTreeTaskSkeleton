@@ -54,7 +54,7 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
   void Init(std::map<std::string, void *> &map) final {
     if (UseATI2())
       ATI2_Load(map);
-    UserInit();
+    UserInit(map);
   }
   void Exec() final {
     UserExec();
@@ -67,7 +67,7 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
 
  protected:
   virtual bool UseATI2() const { return true; }
-  virtual void UserInit() {};
+  virtual void UserInit(std::map<std::string, void *> &map) {};
   virtual void UserExec() {};
   virtual void UserFinish() {};
   /**

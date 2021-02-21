@@ -118,15 +118,6 @@ void Branch::ClearChannels() {
   });
 }
 
-ValueHolder Branch::Value(const Variable &v) const {
-  assert(v.GetParentBranch() == this);
-  if (config.GetType() == AnalysisTree::DetType::kEventHeader) {
-    return ValueHolder(v, data);
-  }
-  throw std::runtime_error("Not implemented for iterable branch");
-}
-
-ValueHolder Branch::operator[](const Variable &v) const { return Value(v); }
 bool Branch::HasField(const std::string &field_name) const {
   auto field_id = config.GetFieldId(field_name);
   return field_id != AnalysisTree::UndefValueShort;
@@ -197,13 +188,6 @@ void Branch::CreateMapping(Branch *other) {
   }
   copy_fields_mapping.emplace(other, std::move(fields_mapping));
 }
-
-ValueHolder ATI2::BranchChannel::Value(const ATI2::Variable &v) const {
-  assert(v.GetParentBranch() == branch);
-  return ValueHolder(v, data_ptr);
-}
-
-ValueHolder BranchChannel::operator[](const Variable &v) const { return Value(v); }
 
 void BranchChannel::UpdateChannel(size_t new_channel) {
   i_channel = new_channel;
@@ -361,19 +345,19 @@ ValueHolder::operator float() const {
 }
 void ValueHolder::SetVal(float val) const {
   v.GetParentBranch()->CheckMutable(true);
-  Impl::ApplyToEntity(entity_type, data_ptr, [this, val](auto entity_ptr) {
+  Impl::ApplyToEntity(v.GetParentBranch()->GetBranchType(), data_ptr, [this, val](auto entity_ptr) {
     Impl::SetValue(v, entity_ptr, val);
   });
 }
 void ValueHolder::SetVal(int val) const {
   v.GetParentBranch()->CheckMutable(true);
-  Impl::ApplyToEntity(entity_type, data_ptr, [this, val](auto entity_ptr) {
+  Impl::ApplyToEntity(v.GetParentBranch()->GetBranchType(), data_ptr, [this, val](auto entity_ptr) {
     Impl::SetValue(v, entity_ptr, val);
   });
 }
 void ValueHolder::SetVal(bool val) const {
   v.GetParentBranch()->CheckMutable(true);
-  Impl::ApplyToEntity(entity_type, data_ptr, [this, val](auto entity_ptr) {
+  Impl::ApplyToEntity(v.GetParentBranch()->GetBranchType(), data_ptr, [this, val](auto entity_ptr) {
     Impl::SetValue(v, entity_ptr, val);
   });
 }

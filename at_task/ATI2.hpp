@@ -19,11 +19,76 @@ class ValueHolder;
 class BranchChannel;
 struct BranchChannelsIter;
 
+class Variable {
+
+ public:
+  ValueHolder operator*() const;
+  void Print(std::ostream &os = std::cout) const;
+
+  Branch *GetParentBranch() const {
+    return parent_branch;
+  }
+  int GetId() const {
+    return id;
+  }
+  AnalysisTree::Types GetFieldType() const {
+    return field_type;
+  }
+  const std::string &GetName() const {
+    return name;
+  }
+  const std::string &GetFieldName() const {
+    return field_name;
+  }
+ private:
+//  Variable() = default;
+  friend Branch;
+
+  Branch *parent_branch{nullptr};
+
+  int id{0};
+  AnalysisTree::Types field_type{AnalysisTree::Types::kNumberOfTypes};
+  std::string name;
+  std::string field_name;
+};
+
+class ValueHolder {
+ public:
+  float GetVal() const;
+  int GetInt() const;
+  bool GetBool() const;
+  void SetVal(float val) const;
+  void SetVal(int int_val) const;
+  void SetVal(bool bool_val) const;
+
+  operator float() const;
+
+  template<typename T>
+  ValueHolder &operator=(T new_val) {
+    SetVal(new_val);
+    return *this;
+  }
+  ValueHolder &operator=(const ValueHolder &other);
+
+ private:
+  friend Branch;
+  friend BranchChannel;
+
+  ValueHolder(const Variable &v, void *data_ptr)
+      : v(v), data_ptr(data_ptr) {}
+
+  const Variable &v;
+  void *data_ptr;
+};
+
 class BranchChannel {
  public:
   /* Getting value */
-  ValueHolder Value(const Variable &v) const;
-  ValueHolder operator[](const Variable &v) const;
+  inline ValueHolder Value(const Variable &v) const {
+    assert(v.GetParentBranch() == branch);
+    return ValueHolder(v, data_ptr);
+  }
+  inline ValueHolder operator[](const Variable &v) const { return Value(v); };
   void *Data() { return data_ptr; }
   const void *Data() const { return data_ptr; }
 
@@ -76,15 +141,13 @@ struct BranchChannelsIter {
   size_t i_channel;
 };
 
-
-
 struct Branch {
   struct BranchChannelsLoop {
     explicit BranchChannelsLoop(Branch *branch) : branch(branch) {}
     Branch *branch{nullptr};
 
     inline BranchChannelsIter begin() const { return branch->ChannelsBegin(); };
-    inline BranchChannelsIter end() const {return branch->ChannelsEnd(); };
+    inline BranchChannelsIter end() const { return branch->ChannelsEnd(); };
   };
 
   struct FieldsMapping {
@@ -103,7 +166,7 @@ struct Branch {
   bool is_connected_to_input{false};
   bool is_connected_to_output{false};
 
-  std::map<const Branch* /* other branch */, FieldsMapping> copy_fields_mapping;
+  std::map<const Branch * /* other branch */, FieldsMapping> copy_fields_mapping;
 
   /* c-tors */
   explicit Branch(AnalysisTree::BranchConfig config) : config(std::move(config)) {
@@ -123,8 +186,15 @@ struct Branch {
   std::vector<std::string> GetFieldNames() const;
 
   /* Getting value */
-  ValueHolder Value(const Variable &v) const;
-  ValueHolder operator[](const Variable &v) const;
+  inline ValueHolder Value(const Variable &v) const {
+    assert(v.GetParentBranch() == this);
+    if (config.GetType() == AnalysisTree::DetType::kEventHeader) {
+      return ValueHolder(v, data);
+    }
+    throw std::runtime_error("Not implemented for iterable branch");
+  }
+
+  inline ValueHolder operator[](const Variable &v) const { return Value(v); };
 
   /* iterating */
   size_t size() const;
@@ -195,71 +265,6 @@ struct Branch {
   }
 
 };
-
-class Variable {
-
- public:
-  ValueHolder operator*() const;
-  void Print(std::ostream &os = std::cout) const;
-
-  Branch *GetParentBranch() const {
-    return parent_branch;
-  }
-  int GetId() const {
-    return id;
-  }
-  AnalysisTree::Types GetFieldType() const {
-    return field_type;
-  }
-  const std::string &GetName() const {
-    return name;
-  }
-  const std::string &GetFieldName() const {
-    return field_name;
-  }
- private:
-//  Variable() = default;
-  friend Branch;
-
-  Branch *parent_branch{nullptr};
-
-  int id{0};
-  AnalysisTree::Types field_type{AnalysisTree::Types::kNumberOfTypes};
-  std::string name;
-  std::string field_name;
-};
-
-class ValueHolder {
- public:
-  float GetVal() const;
-  int GetInt() const;
-  bool GetBool() const;
-  void SetVal(float val) const;
-  void SetVal(int int_val) const;
-  void SetVal(bool bool_val) const;
-
-  operator float() const;
-
-  template<typename T>
-  ValueHolder& operator= (T new_val)  { SetVal(new_val); return *this; }
-  ValueHolder& operator= (const ValueHolder& other);
-
- private:
-  friend Branch;
-  friend BranchChannel;
-
-  ValueHolder(const Variable &v, void *data_ptr)
-      : v(v), data_ptr(data_ptr) {
-    entity_type = v.GetParentBranch()->GetBranchType();
-  }
-
-  const Variable &v;
-  AnalysisTree::DetType entity_type;
-  void *data_ptr;
-};
-
-
-
 
 } // namespace ATI2
 

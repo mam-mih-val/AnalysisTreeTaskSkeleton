@@ -73,7 +73,7 @@ void SetField(AnalysisTree::Particle *particle, Int_t field_id, Value value) {
         break;
       case ParticleFields::kPz: particle->SetMomentum3({particle->GetPx(), particle->GetPy(), double(value)});
         break;
-      case ParticleFields::kMass: particle->SetMass(int(value));
+      case ParticleFields::kMass: particle->SetMass(float(value));
         break;
       case ParticleFields::kPid: particle->SetPid(int(value));
         break;

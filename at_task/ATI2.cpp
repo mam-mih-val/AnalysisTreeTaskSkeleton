@@ -15,10 +15,6 @@ void BranchChannel::Print(std::ostream &os) const {
   os << "Branch " << branch->GetBranchName() << " channel #" << i_channel << std::endl;
 }
 
-BranchChannelsIter Branch::BranchChannelsLoop::begin() const { return branch->ChannelsBegin(); }
-
-BranchChannelsIter Branch::BranchChannelsLoop::end() const { return branch->ChannelsEnd(); }
-
 Variable Branch::GetFieldVar(const std::string &field_name) {
   ATI2::Variable v;
   v.parent_branch = this;
@@ -121,15 +117,7 @@ void Branch::ClearChannels() {
     }
   });
 }
-void Branch::CheckFrozen(bool expected) const {
-  if (is_frozen != expected)
-    throw std::runtime_error("Branch is frozen");
-}
 
-void Branch::CheckMutable(bool expected) const {
-  if (is_mutable != expected)
-    throw std::runtime_error("Branch is not mutable");
-}
 ValueHolder Branch::Value(const Variable &v) const {
   assert(v.GetParentBranch() == this);
   if (config.GetType() == AnalysisTree::DetType::kEventHeader) {

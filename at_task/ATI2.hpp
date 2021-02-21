@@ -83,12 +83,11 @@ struct Branch {
     explicit BranchChannelsLoop(Branch *branch) : branch(branch) {}
     Branch *branch{nullptr};
 
-    BranchChannelsIter begin() const;
-    BranchChannelsIter end() const;
+    inline BranchChannelsIter begin() const { return branch->ChannelsBegin(); };
+    inline BranchChannelsIter end() const {return branch->ChannelsEnd(); };
   };
 
   struct FieldsMapping {
-
     std::vector<std::pair<Variable /* src */, Variable /* dst */>> field_pairs;
   };
 
@@ -112,7 +111,7 @@ struct Branch {
   }
   Branch(AnalysisTree::BranchConfig config, void *data) : config(std::move(config)), data(data) {}
 
-  /* Accessors to branch' main parameters */
+  /* Accessors to branch' main parameters, used very often */
   inline auto GetBranchName() const { return config.GetName(); }
   inline auto GetBranchType() const { return config.GetType(); }
 
@@ -130,15 +129,22 @@ struct Branch {
   /* iterating */
   size_t size() const;
   BranchChannel operator[](size_t i_channel);
-  BranchChannelsLoop Loop() { return BranchChannelsLoop(this); };
-  BranchChannelsIter ChannelsBegin() { return BranchChannelsIter(this, 0); };
-  BranchChannelsIter ChannelsEnd() { return BranchChannelsIter(this, size()); };
+  inline BranchChannelsLoop Loop() { return BranchChannelsLoop(this); };
+  inline BranchChannelsIter ChannelsBegin() { return BranchChannelsIter(this, 0); };
+  inline BranchChannelsIter ChannelsEnd() { return BranchChannelsIter(this, size()); };
 
   /* Modification */
   void Freeze(bool freeze = true) { is_frozen = freeze; };
   void SetMutable(bool is_mutable = true) { Branch::is_mutable = is_mutable; }
-  void CheckFrozen(bool expected = true) const;
-  void CheckMutable(bool expected = true) const;
+  /* Checks are used very often */
+  inline void CheckFrozen(bool expected = true) const {
+    if (is_frozen != expected)
+      throw std::runtime_error("Branch is frozen");
+  }
+  inline void CheckMutable(bool expected = true) const {
+    if (is_mutable != expected)
+      throw std::runtime_error("Branch is not mutable");
+  }
   BranchChannel NewChannel();
   void ClearChannels();
   Variable NewVariable(const std::string &field_name, AnalysisTree::Types type);

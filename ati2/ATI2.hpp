@@ -177,6 +177,7 @@ struct Branch {
   /* Accessors to branch' main parameters, used very often */
   inline auto GetBranchName() const { return config.GetName(); }
   inline auto GetBranchType() const { return config.GetType(); }
+  inline const AnalysisTree::BranchConfig &GetConfig() const { return config; }
 
   void InitDataPtr();
   void ConnectOutputTree(TTree *tree);

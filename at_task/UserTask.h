@@ -51,49 +51,38 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
     return this;
   }
 
- protected:
-  typedef short VariableIndex;
-  /**
-   * @brief This function simplifies routine of getting the variable Id from
-   * <b>input</b> config during the initialization of the program (usually Init()).
-   * Effectively replaces config_->GetBranchConfig("BranchName")->GetFieldId("FieldName")
-   * Checks existence of the requested branch
-   * @param variable_name - name of the variable in format "BranchName/FieldName"
-   * @return variable id
-   */
-  VariableIndex VarId(const std::string &variable_name) const;
-  VariableIndex VarId(const std::string &branch_name, const std::string &field_name) const;
+  void Init(std::map<std::string, void *> &map) final {
+    if (UseATI2())
+      ATI2_Load(map);
+    UserInit();
+  }
+  void Exec() final {
+    UserExec();
+  }
+  void Finish() final {
+    UserFinish();
+    if (UseATI2())
+      ATI2_Finish();
+  }
 
+ protected:
+  virtual bool UseATI2() const { return true; }
+  virtual void UserInit() {};
+  virtual void UserExec() {};
+  virtual void UserFinish() {};
   /**
    * @brief This function creates new branch in the out_config_
    * @param branch_name
    * @param detector_type
    * @return
    */
-  AnalysisTree::BranchConfig &NewBranch(const std::string &branch_name, AnalysisTree::DetType detector_type);
-
-  /**
-   * @brief This function initialize new variable in the <b>output</b> config.
-   * @tparam T - type of the variable
-   * @param variable_name - name of the variable in format "BranchName/FieldName"
-   * @return variable Id
-   */
-  template<typename T>
-  short NewVar(const std::string &variable_name) {
-    auto &&[branch_name, field_name] = ParseVarName(variable_name);
-
-    auto &branch = out_config_->GetBranchConfig(branch_name);
-    branch.template AddField<T>(field_name);
-    return branch.GetFieldId(field_name);
-  }
-
- public:
-
-  void ReadMap(std::map<std::string, void *> &map);
-  ATI2::Branch *GetInBranch(const std::string &name) const { return branches_in_.at(name).get(); }
-  ATI2::Branch *GetOutBranch(const std::string &name) const { return branches_out_.at(name).get(); }
+  ATI2::Branch *NewBranch(const std::string &branch_name, AnalysisTree::DetType detector_type);
+  inline ATI2::Branch *GetInBranch(const std::string &name) const { return branches_in_.at(name).get(); }
+  inline ATI2::Branch *GetOutBranch(const std::string &name) const { return branches_out_.at(name).get(); }
   ATI2::Variable GetVar(const std::string &name) const;
-
+ private:
+  void ATI2_Load(std::map<std::string, void *> &map);
+  void ATI2_Finish();
   std::map<std::string, std::unique_ptr<ATI2::Branch>> branches_in_;
   std::map<std::string, std::unique_ptr<ATI2::Branch>> branches_out_;
 

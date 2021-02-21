@@ -21,50 +21,20 @@ public:
     return boost::program_options::options_description(GetName() + " options");
   }
   void PreInit() override {
-    /* insert your pre-init here */
-    SetInputBranchNames({"PsdModules", "SimEventHeader"});
-    SetOutputBranchName("Centality");
-    is_init = true;
-  }
-
-  void Init(std::map<std::string, void *> &branches_map) override {
-    psd = static_cast<ModuleDetector *>(branches_map.at("PsdModules"));
-    in_chain_->SetBranchAddress("PsdModules", &psd);
-
-    AnalysisTree::BranchConfig centrality_branch(out_branch_, AnalysisTree::DetType::kEventHeader);
-    centrality_branch.AddField<float>("Centrality_Epsd");
-    centrality_Epsd_field_id = centrality_branch.GetFieldId("Centrality_Epsd");
-
-    out_tree_->Branch(out_branch_.c_str(), "AnalysisTree::Container", &ana_event_header_);
-    config_->AddBranchConfig(centrality_branch);
-    ana_event_header_->Init(centrality_branch);
-
-    branches_map.emplace("Centrality", ana_event_header_);
-  }
-
-  void Exec() override {
-    auto n_channel = psd->GetNumberOfChannels();
-
-    float total_signal = 0.;
-    for (int ich = 0; ich < n_channel; ++ich) {
-      auto channel = psd->GetChannel(ich);
-      auto signal = channel.GetSignal();
-      total_signal += signal;
-    }
-    ana_event_header_->SetField(total_signal, centrality_Epsd_field_id);
 
   }
-  void Finish() override {
+
+  void UserInit() override {
+
+  }
+  void UserExec() override {
+
+  }
+  void UserFinish() override {
 
   }
 
 private:
-  typedef AnalysisTree::Detector<AnalysisTree::Module> ModuleDetector;
-
-  AnalysisTree::Container *ana_event_header_{nullptr};
-  ModuleDetector *psd{nullptr};
-  int centrality_Epsd_field_id{-999};
-  bool is_init{false};
 
 TASK_DEF(FooTask, 1)
 };
@@ -73,13 +43,11 @@ class BarTask : public UserFillTask {
 
 public:
   void PreInit() override {
-    auto foo_task = GetTaskPtr<FooTask>();
+    auto foo_task = FooTask::Instance();
     std::cout << foo_task->GetName() << std::endl;
   }
 
-  void Init(std::map<std::string, void *> &Map) override {
-    ReadMap(Map);
-
+  void UserInit() override {
 
     rec_event_header_vtx_x = GetVar("RecEventHeader/vtx_x");
     rec_event_header_vtx_x.Print();
@@ -104,7 +72,7 @@ public:
     test_event_header->Freeze(); /* No more structural changes */
 
   }
-  void Exec() override {
+  void UserExec() override {
 
     /* Abilities of ATI2::Branch */
     test_event_header->CopyContents(rec_event_header);
@@ -125,27 +93,26 @@ public:
     /* abilities of BranchChannel */
     for (auto &vtx_track : vtx_tracks_branch->Loop()) {
       auto processed_track = processed_tracks_branch->NewChannel();
-//      std::cout << "Current size " << processed_tracks_branch->size() << std::endl;
       processed_track.CopyContents(vtx_track);
       processed_track.CopyContents(*rec_event_header);
 
-      vtxtracks_dca_x.Print();
-      std::cout << vtx_track[vtxtracks_dca_x].GetVal() << "\t"
-                << processed_track[processed_tracks_dcax].GetVal() << std::endl;
-      rec_event_header_vtx_x.Print();
-      processed_tracks_vtxx.Print();
-      std::cout << (*rec_event_header)[rec_event_header_vtx_x].GetVal() << "\t"
-                << processed_track[processed_tracks_vtxx].GetVal() << std::endl;
+//      std::cout << "Current size " << processed_tracks_branch->size() << std::endl;
+//      vtxtracks_dca_x.Print();
+//      std::cout << vtx_track[vtxtracks_dca_x].GetVal() << "\t"
+//                << processed_track[processed_tracks_dcax].GetVal() << std::endl;
+//      rec_event_header_vtx_x.Print();
+//      processed_tracks_vtxx.Print();
+//      std::cout << (*rec_event_header)[rec_event_header_vtx_x].GetVal() << "\t"
+//                << processed_track[processed_tracks_vtxx].GetVal() << std::endl;
 
     }
 
   }
-  void Finish() override {
+  void UserFinish() override {
 
   }
 
 private:
-  AnalysisTree::Container *centrality_{nullptr};
 
   ATI2::Branch *rec_event_header{nullptr};
   ATI2::Variable rec_event_header_vtx_x;

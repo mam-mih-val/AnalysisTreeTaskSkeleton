@@ -89,6 +89,7 @@ class BranchChannel {
     return ValueHolder(v, data_ptr);
   }
   inline ValueHolder operator[](const Variable &v) const { return Value(v); };
+  inline size_t GetNChannel() const { return i_channel; }
 
   /* usage of this functions is highly discouraged */
   void *Data() { return data_ptr; }

@@ -31,12 +31,10 @@ AnalysisTree::BranchConfig &UserFillTask::NewBranch(const std::string &branch_na
   if (branches_out_.find(branch_name) != branches_out_.end())
     throw std::runtime_error("Branch of that name already exists");
 
-  auto branch_ptr = std::make_unique<Branch>();
-  branch_ptr->config = branch_config;
+  auto branch_ptr = std::make_unique<Branch>(branch_config);
   branch_ptr->parent_config = out_config_;
-  branch_ptr->InitDataPtr();
   branch_ptr->ConnectOutputTree(out_tree_);
-  branch_ptr->is_mutable = true;
+  branch_ptr->SetMutable(true);
   branches_out_.emplace(branch_name, std::move(branch_ptr));
 
   out_config_->AddBranchConfig(branch_config);
@@ -65,12 +63,10 @@ void UserFillTask::ReadMap(std::map<std::string, void *>& map) {
       continue;
     }
 
-    auto branch = std::make_unique<Branch>();
-    branch->config = config;
-    branch->data = data_ptr;
+    auto branch = std::make_unique<Branch>(config, data_ptr);
     branch->parent_config = config_;
     branch->is_connected_to_input = true;
-    branch->is_mutable = false;
+    branch->SetMutable(false);
     branch->Freeze();
     branches_in_.emplace(branch_name, std::move(branch));
   }

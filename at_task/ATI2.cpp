@@ -12,7 +12,7 @@
 using namespace ATI2;
 
 void BranchChannel::Print(std::ostream &os) const {
-  os << "Branch " << branch->config.GetName() << " channel #" << i_channel << std::endl;
+  os << "Branch " << branch->GetBranchName() << " channel #" << i_channel << std::endl;
 }
 
 BranchChannelsIter Branch::BranchChannelsLoop::begin() const { return branch->ChannelsBegin(); }
@@ -192,12 +192,20 @@ void Branch::CreateMapping(Branch *other) {
   CheckFrozen();
   other->CheckFrozen();
 
+  const std::map<AnalysisTree::Types, std::string> types_map = {
+      {AnalysisTree::Types::kFloat, "float"},
+      {AnalysisTree::Types::kInteger, "integer"},
+      {AnalysisTree::Types::kBool, "bool"}
+  };
+
   std::cout << "New mapping " << other->config.GetName() << " --> " << config.GetName() << std::endl;
   FieldsMapping fields_mapping;
   for (auto &field_name : other->GetFieldNames()) {
     if (!HasField(field_name)) { continue; }
     fields_mapping.field_pairs.emplace_back(std::make_pair(other->GetFieldVar(field_name), GetFieldVar(field_name)));
-    std::cout << "\t" << field_name << std::endl;
+    std::cout << "\t" << field_name
+              << "\t(" << types_map.at(other->GetFieldVar(field_name).GetFieldType()) << " ---> "
+              << types_map.at(GetFieldVar(field_name).GetFieldType()) << ")" << std::endl;
   }
   copy_fields_mapping.emplace(other, std::move(fields_mapping));
 }
@@ -233,6 +241,27 @@ void BranchChannel::CopyContents(const BranchChannel &other) {
   if (mapping_it == branch->copy_fields_mapping.end()) {
     branch->CreateMapping(other.branch);
     mapping_it = branch->copy_fields_mapping.find(other.branch);
+  }
+
+  /* Eval mapping */
+  const auto &field_pairs = mapping_it->second.field_pairs;
+
+  for (auto &field_pair /* src : dst */ : field_pairs) {
+    this->Value(field_pair.second) = other.Value(field_pair.first);
+  }
+
+}
+void BranchChannel::CopyContents(Branch &other) {
+  branch->CheckMutable();
+
+  if (other.GetBranchType() != AnalysisTree::DetType::kEventHeader) {
+    throw std::runtime_error("This operation is allowed only between iterable and non-iterable types");
+  }
+
+  auto mapping_it = branch->copy_fields_mapping.find(&other);
+  if (mapping_it == branch->copy_fields_mapping.end()) {
+    branch->CreateMapping(&other);
+    mapping_it = branch->copy_fields_mapping.find(&other);
   }
 
   /* Eval mapping */
@@ -317,7 +346,7 @@ void SetValue(const Variable &v, Entity *e, ValueType new_value) {
 
 } // namespace Impl
 float ValueHolder::GetVal() const {
-  return Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(),
+  return Impl::ApplyToEntity(v.GetParentBranch()->GetBranchType(),
                              data_ptr, [this](auto entity_ptr) {
         using Entity = std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>;
         return Impl::ReadValue<Entity, float>(this->v, entity_ptr);
@@ -325,7 +354,7 @@ float ValueHolder::GetVal() const {
 }
 
 int ValueHolder::GetInt() const {
-  return Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(),
+  return Impl::ApplyToEntity(v.GetParentBranch()->GetBranchType(),
                              data_ptr, [this](auto entity_ptr) {
         using Entity = std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>;
         return Impl::ReadValue<Entity, int>(this->v, entity_ptr);
@@ -333,7 +362,7 @@ int ValueHolder::GetInt() const {
 }
 
 bool ValueHolder::GetBool() const {
-  return Impl::ApplyToEntity(v.GetParentBranch()->config.GetType(),
+  return Impl::ApplyToEntity(v.GetParentBranch()->GetBranchType(),
                              data_ptr, [this](auto entity_ptr) {
         using Entity = std::remove_const_t<std::remove_pointer_t<decltype(entity_ptr)>>;
         return Impl::ReadValue<Entity, bool>(this->v, entity_ptr);

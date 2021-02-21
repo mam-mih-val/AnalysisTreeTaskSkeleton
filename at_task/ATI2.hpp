@@ -33,6 +33,7 @@ class BranchChannel {
    * @return
    */
   void CopyContents(const BranchChannel &other);
+  void CopyContents(Branch &other);
 
   void Print(std::ostream &os = std::cout) const;
 
@@ -93,18 +94,27 @@ struct Branch {
 
   ~Branch();
 
-
+ private:
   AnalysisTree::BranchConfig config;
-  AnalysisTree::Configuration *parent_config;
   void *data{nullptr}; /// owns object
-  bool is_connected_to_input{false};
-  bool is_connected_to_output{false};
   bool is_mutable{false};
   bool is_frozen{false};
-
-
+ public:
+  AnalysisTree::Configuration *parent_config{nullptr};
+  bool is_connected_to_input{false};
+  bool is_connected_to_output{false};
 
   std::map<const Branch* /* other branch */, FieldsMapping> copy_fields_mapping;
+
+  /* c-tors */
+  explicit Branch(AnalysisTree::BranchConfig config) : config(std::move(config)) {
+    InitDataPtr();
+  }
+  Branch(AnalysisTree::BranchConfig config, void *data) : config(std::move(config)), data(data) {}
+
+  /* Accessors to branch' main parameters */
+  inline auto GetBranchName() const { return config.GetName(); }
+  inline auto GetBranchType() const { return config.GetType(); }
 
   void InitDataPtr();
   void ConnectOutputTree(TTree *tree);
@@ -126,6 +136,7 @@ struct Branch {
 
   /* Modification */
   void Freeze(bool freeze = true) { is_frozen = freeze; };
+  void SetMutable(bool is_mutable = true) { Branch::is_mutable = is_mutable; }
   void CheckFrozen(bool expected = true) const;
   void CheckMutable(bool expected = true) const;
   BranchChannel NewChannel();
@@ -233,7 +244,7 @@ class ValueHolder {
 
   ValueHolder(const Variable &v, void *data_ptr)
       : v(v), data_ptr(data_ptr) {
-    entity_type = v.GetParentBranch()->config.GetType();
+    entity_type = v.GetParentBranch()->GetBranchType();
   }
 
   const Variable &v;

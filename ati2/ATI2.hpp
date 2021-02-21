@@ -242,6 +242,7 @@ struct Branch {
       return f((AnalysisTree::EventHeader *) data);
     }
     /* unreachable */
+    __builtin_unreachable();
     assert(false);
   }
 
@@ -261,6 +262,7 @@ struct Branch {
       return f((const AnalysisTree::EventHeader *) data);
     }
     /* unreachable */
+    __builtin_unreachable();
     assert(false);
   }
 

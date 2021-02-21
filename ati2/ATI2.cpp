@@ -279,6 +279,7 @@ auto ApplyToEntity(AnalysisTree::DetType det_type, DataPtr ptr, Functor &&functo
     return functor(DataT<AnalysisTree::EventHeader>(ptr));
   }
   /* unreachable */
+  __builtin_unreachable();
   assert(false);
 }
 
@@ -292,8 +293,12 @@ ValueType ReadValue(const Variable &v, const Entity *e) {
     return (ValueType) e->template GetField<int>(v.GetId());
   } else if (v.GetFieldType() == Types::kBool) {
     return (ValueType) e->template GetField<bool>(v.GetId());
+  } else if (v.GetFieldType() == Types::kNumberOfTypes){
+    /* Types::kNumberOfTypes */
+    assert(false);
   }
   /* unreachable */
+  __builtin_unreachable();
   assert(false);
 }
 
@@ -313,6 +318,7 @@ void SetValue(const Variable &v, Entity *e, ValueType new_value) {
     return;
   }
   /* unreachable */
+  __builtin_unreachable();
   assert(false);
 }
 

@@ -20,6 +20,7 @@ include(AnalysisTreeCuts)
 
 set(ATTaskSkeleton_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
+add_subdirectory(ati2)
 add_subdirectory(at_task)
 
 if (ATTaskSkeleton_BUILD_SAMPLE)

@@ -177,7 +177,7 @@ void Branch::CreateMapping(Branch *other) {
       {AnalysisTree::Types::kBool, "bool"}
   };
 
-  std::cout << "New mapping " << other->config.GetName() << " --> " << config.GetName() << std::endl;
+  std::cout << "New cached mapping " << other->config.GetName() << " --> " << config.GetName() << std::endl;
   FieldsMapping fields_mapping;
   for (auto &field_name : other->GetFieldNames()) {
     if (!HasField(field_name)) { continue; }

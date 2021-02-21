@@ -30,19 +30,17 @@ ATI2::Branch *UserFillTask::NewBranch(const std::string &branch_name,
 }
 void UserFillTask::ATI2_Load(std::map<std::string, void *> &map) {
   assert(UseATI2());
-  for (auto &map_ele : map) {
-    auto branch_name = map_ele.first;
-    auto data_ptr = map_ele.second;
+  for (auto &config : config_->GetBranchConfigs()) {
+    auto branch_name = config.GetName();
 
-    AnalysisTree::BranchConfig config;
-    try {
-      config = config_->GetBranchConfig(branch_name);
-    } catch (std::runtime_error &e) {
-      // TODO warning
+    auto data_ptr_it = map.find(branch_name);
+    if (data_ptr_it == map.end()) {
+      std::cout << "Branch config with name " << branch_name
+        << "has no corresponding pointer in the map";
       continue;
     }
 
-    auto branch = std::make_unique<Branch>(config, data_ptr);
+    auto branch = std::make_unique<Branch>(config, data_ptr_it->second);
     branch->parent_config = config_;
     branch->is_connected_to_input = true;
     branch->SetMutable(false);

@@ -29,7 +29,7 @@ ATI2::Branch *UserFillTask::NewBranch(const std::string &branch_name,
   return branches_out_.find(branch_name)->second.get();
 }
 ATI2::Branch *UserFillTask::NewBranch(const std::string &branch_name, const AnalysisTree::BranchConfig &config) {
-  assert(UseATI());
+  assert(UseATI2());
 
   std::cout << "Cloning branch config " << config.GetName() << " to " << branch_name << std::endl;
   auto new_branch = NewBranch(branch_name, config.GetType());

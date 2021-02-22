@@ -80,6 +80,7 @@ void SetField(AnalysisTree::Particle *particle, Int_t field_id, Value value) {
       case ParticleFields::kP:
       case ParticleFields::kPt:
       case ParticleFields::kEta:
+      case ParticleFields::kRapidity:
       case ParticleFields::kPhi: /* transient fields, ignoring */ break;
       default: throw std::runtime_error("Unknown field");
     }

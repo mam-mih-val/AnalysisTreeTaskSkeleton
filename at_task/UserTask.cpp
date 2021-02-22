@@ -14,10 +14,12 @@ using namespace ATI2;
 ATI2::Branch *UserFillTask::NewBranch(const std::string &branch_name,
                                       AnalysisTree::DetType detector_type) {
   assert(UseATI2());
-  AnalysisTree::BranchConfig branch_config(branch_name, detector_type);
-
   if (branches_out_.find(branch_name) != branches_out_.end())
     throw std::runtime_error("Branch of that name already exists");
+  if (branch_name.empty())
+    throw std::runtime_error("Branch name cannot be empty");
+  AnalysisTree::BranchConfig branch_config(branch_name, detector_type);
+
 
   auto branch_ptr = std::make_unique<Branch>(branch_config);
   branch_ptr->parent_config = out_config_;

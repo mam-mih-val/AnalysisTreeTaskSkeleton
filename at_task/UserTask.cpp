@@ -28,6 +28,39 @@ ATI2::Branch *UserFillTask::NewBranch(const std::string &branch_name,
   branches_out_.emplace(branch_name, std::move(branch_ptr));
   return branches_out_.find(branch_name)->second.get();
 }
+ATI2::Branch *UserFillTask::NewBranch(const std::string &branch_name, const AnalysisTree::BranchConfig &config) {
+  assert(UseATI());
+
+  std::cout << "Cloning branch config " << config.GetName() << " to " << branch_name << std::endl;
+  auto new_branch = NewBranch(branch_name, config.GetType());
+
+  for (const auto &element : config.GetMap<float>()) {
+    auto &field_name = element.first;
+    if (new_branch->HasField(field_name)) {
+      std::cout << "Field '" << field_name << "' is already exists in this branch. Skipping..." << std::endl;
+      continue;
+    }
+    new_branch->NewVariable(field_name, AnalysisTree::Types::kFloat);
+  }
+  for (const auto &element : config.GetMap<int>()) {
+    auto &field_name = element.first;
+    if (new_branch->HasField(field_name)) {
+      std::cout << "Field '" << field_name << "' is already exists in this branch. Skipping..." << std::endl;
+      continue;
+    }
+    new_branch->NewVariable(field_name, AnalysisTree::Types::kInteger);
+  }
+  for (const auto &element : config.GetMap<bool>()) {
+    auto &field_name = element.first;
+    if (new_branch->HasField(field_name)) {
+      std::cout << "Field '" << field_name << "' is already exists in this branch. Skipping..." << std::endl;
+      continue;
+    }
+    new_branch->NewVariable(field_name, AnalysisTree::Types::kBool);
+  }
+  return new_branch;
+}
+
 void UserFillTask::ATI2_Load(std::map<std::string, void *> &map) {
   assert(UseATI2());
   for (auto &config : config_->GetBranchConfigs()) {
@@ -64,7 +97,6 @@ void UserFillTask::ATI2_Finish() {
   }
   out_config_->Print();
 }
-
 std::pair<std::string, std::string> UserFillTask::ParseVarName(const std::string &variable_name) {
   const std::regex re_vname("^(\\w+)/(\\w+)$");
 

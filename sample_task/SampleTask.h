@@ -57,9 +57,8 @@ public:
     vtxtracks_dca_x = GetVar("VtxTracks/dcax");
     vtxtracks_dca_x.Print();
 
-    NewBranch("ProcessedTracks", AnalysisTree::DetType::kParticle);
+    processed_tracks_branch = NewBranch("ProcessedTracks", vtx_tracks_branch->GetConfig());
 
-    processed_tracks_branch = GetOutBranch("ProcessedTracks");
     /* We will take dcax/y from VtxTracks */
     processed_tracks_dcax = processed_tracks_branch->NewVariable("dcax", AnalysisTree::Types::kFloat);
     processed_tracks_vtxx = processed_tracks_branch->NewVariable("vtx_x", AnalysisTree::Types::kFloat);
@@ -70,6 +69,7 @@ public:
     rec_event_header = GetInBranch("RecEventHeader");
 
     test_event_header->Freeze(); /* No more structural changes */
+    processed_tracks_branch->Freeze();
 
   }
   void UserExec() override {

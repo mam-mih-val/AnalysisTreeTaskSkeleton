@@ -77,6 +77,7 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
    * @return
    */
   ATI2::Branch *NewBranch(const std::string &branch_name, AnalysisTree::DetType detector_type);
+  ATI2::Branch *NewBranch(const std::string &branch_name, const AnalysisTree::BranchConfig &config);
   inline ATI2::Branch *GetInBranch(const std::string &name) const { return branches_in_.at(name).get(); }
   inline ATI2::Branch *GetOutBranch(const std::string &name) const { return branches_out_.at(name).get(); }
   ATI2::Variable GetVar(const std::string &name) const;

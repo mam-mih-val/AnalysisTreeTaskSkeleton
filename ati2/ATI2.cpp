@@ -82,10 +82,15 @@ BranchChannel Branch::NewChannel() {
 }
 
 Variable Branch::NewVariable(const std::string &field_name, AnalysisTree::Types type) {
+  if (field_name.empty())
+    throw std::runtime_error("Field name cannot be empty");
+  if (type == AnalysisTree::Types::kNumberOfTypes)
+    throw std::runtime_error("Type of the field cannot be kNumberOfTypes");
+
   CheckFrozen(false);
   CheckMutable(true);
-
   using AnalysisTree::Types;
+
 
   if (Types::kFloat == type) {
     config.template AddField<float>(field_name);

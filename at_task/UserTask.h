@@ -82,9 +82,17 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
   inline ATI2::Branch *GetOutBranch(const std::string &name) const { return branches_out_.at(name).get(); }
   ATI2::Variable GetVar(const std::string &name) const;
 
+  /* AnalysisTree::Types */
   constexpr static AnalysisTree::Types INTEGER = AnalysisTree::Types::kInteger;
   constexpr static AnalysisTree::Types FLOAT = AnalysisTree::Types::kFloat;
   constexpr static AnalysisTree::Types BOOLEAN = AnalysisTree::Types::kBool;
+  /* AnalysisTree::DetType */
+  constexpr static AnalysisTree::DetType EVENT_HEADER = AnalysisTree::DetType::kEventHeader;
+  constexpr static AnalysisTree::DetType TRACKS = AnalysisTree::DetType::kTrack;
+  constexpr static AnalysisTree::DetType PARTICLES = AnalysisTree::DetType::kParticle;
+  constexpr static AnalysisTree::DetType MODULES = AnalysisTree::DetType::kModule;
+  constexpr static AnalysisTree::DetType HITS = AnalysisTree::DetType::kHit;
+
  private:
   void ATI2_Load(std::map<std::string, void *> &map);
   void ATI2_Finish();

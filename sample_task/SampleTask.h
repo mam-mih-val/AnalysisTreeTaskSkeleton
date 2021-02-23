@@ -57,13 +57,14 @@ public:
     vtxtracks_dca_x = GetVar("VtxTracks/dcax");
     vtxtracks_dca_x.Print();
 
-    processed_tracks_branch = NewBranch("ProcessedTracks", vtx_tracks_branch->GetConfig());
+    processed_tracks_branch = NewBranch("ProcessedTracks", PARTICLES);
+    processed_tracks_branch->CloneVariables(vtx_tracks_branch->GetConfig());
 
     /* We will take dcax/y from VtxTracks */
     processed_tracks_dcax = processed_tracks_branch->NewVariable("dcax", FLOAT);
     processed_tracks_vtxx = processed_tracks_branch->NewVariable("vtx_x", FLOAT);
 
-    NewBranch("test_event_header", AnalysisTree::DetType::kEventHeader);
+    NewBranch("test_event_header", EVENT_HEADER);
     test_event_header = GetOutBranch("test_event_header");
     test_event_header_vtx_x = test_event_header->GetFieldVar("vtx_x");
     rec_event_header = GetInBranch("RecEventHeader");

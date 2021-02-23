@@ -6,6 +6,7 @@
 
 #include <regex>
 
+#include <TFile.h>
 #include <AnalysisTree/EventHeader.hpp>
 #include <AnalysisTree/Detector.hpp>
 
@@ -74,6 +75,10 @@ void UserFillTask::ATI2_Finish() {
     out_config_->AddBranchConfig(branch_item.second->GetConfig());
   }
   out_config_->Print();
+  auto cwd = gDirectory;
+  out_file_->cd();
+  out_config_->Write("Configuration", TObject::kOverwrite);
+  cwd->cd();
 }
 std::pair<std::string, std::string> UserFillTask::ParseVarName(const std::string &variable_name) {
   const std::regex re_vname("^(\\w+)/(\\w+)$");

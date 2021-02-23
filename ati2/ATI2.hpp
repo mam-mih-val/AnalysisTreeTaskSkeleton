@@ -226,6 +226,7 @@ struct Branch {
   BranchChannel NewChannel();
   void ClearChannels();
   Variable NewVariable(const std::string &field_name, AnalysisTree::Types type);
+  void CloneVariables(const AnalysisTree::BranchConfig& other);
   void CopyContents(Branch *br);
 
   void CreateMapping(Branch *other);;

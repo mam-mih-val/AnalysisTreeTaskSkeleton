@@ -107,6 +107,23 @@ Variable Branch::NewVariable(const std::string &field_name, AnalysisTree::Types 
   return v;
 }
 
+void Branch::CloneVariables(const AnalysisTree::BranchConfig &other) {
+  auto import_fields_from_map = [this] (const std::map<std::string, short> &map, AnalysisTree::Types type) {
+    for (auto &element : map) {
+      auto field_name = element.first;
+      if (this->HasField(field_name)) {
+        std::cout << "Field '" << field_name << "' already exists" << std::endl;
+        continue;
+      }
+      this->NewVariable(field_name, type);
+    } // map elements
+  };
+
+  import_fields_from_map(other.GetMap<float>(), AnalysisTree::Types::kFloat);
+  import_fields_from_map(other.GetMap<int>(), AnalysisTree::Types::kInteger);
+  import_fields_from_map(other.GetMap<bool>(), AnalysisTree::Types::kBool);
+}
+
 void Branch::ClearChannels() {
   CheckMutable();
   ApplyT([this](auto entity_ptr) -> void {
@@ -117,7 +134,6 @@ void Branch::ClearChannels() {
     }
   });
 }
-
 bool Branch::HasField(const std::string &field_name) const {
   auto field_id = config.GetFieldId(field_name);
   return field_id != AnalysisTree::UndefValueShort;
@@ -127,7 +143,7 @@ std::vector<std::string> Branch::GetFieldNames() const {
   auto fill_vector_from_map = [&result] (const std::map<std::string, short> &fields_map) -> void {
     for (auto &element : fields_map) {
       result.push_back(element.first);
-    }
+     }
   };
   fill_vector_from_map(config.GetMap<float>());
   fill_vector_from_map(config.GetMap<int>());

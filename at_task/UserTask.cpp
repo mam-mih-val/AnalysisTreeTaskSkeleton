@@ -35,31 +35,7 @@ ATI2::Branch *UserFillTask::NewBranch(const std::string &branch_name, const Anal
 
   std::cout << "Cloning branch config " << config.GetName() << " to " << branch_name << std::endl;
   auto new_branch = NewBranch(branch_name, config.GetType());
-
-  for (const auto &element : config.GetMap<float>()) {
-    auto &field_name = element.first;
-    if (new_branch->HasField(field_name)) {
-      std::cout << "Field '" << field_name << "' is already exists in this branch. Skipping..." << std::endl;
-      continue;
-    }
-    new_branch->NewVariable(field_name, AnalysisTree::Types::kFloat);
-  }
-  for (const auto &element : config.GetMap<int>()) {
-    auto &field_name = element.first;
-    if (new_branch->HasField(field_name)) {
-      std::cout << "Field '" << field_name << "' is already exists in this branch. Skipping..." << std::endl;
-      continue;
-    }
-    new_branch->NewVariable(field_name, AnalysisTree::Types::kInteger);
-  }
-  for (const auto &element : config.GetMap<bool>()) {
-    auto &field_name = element.first;
-    if (new_branch->HasField(field_name)) {
-      std::cout << "Field '" << field_name << "' is already exists in this branch. Skipping..." << std::endl;
-      continue;
-    }
-    new_branch->NewVariable(field_name, AnalysisTree::Types::kBool);
-  }
+  new_branch->CloneVariables(config);
   return new_branch;
 }
 

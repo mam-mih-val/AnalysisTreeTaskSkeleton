@@ -60,8 +60,8 @@ public:
     processed_tracks_branch = NewBranch("ProcessedTracks", vtx_tracks_branch->GetConfig());
 
     /* We will take dcax/y from VtxTracks */
-    processed_tracks_dcax = processed_tracks_branch->NewVariable("dcax", AnalysisTree::Types::kFloat);
-    processed_tracks_vtxx = processed_tracks_branch->NewVariable("vtx_x", AnalysisTree::Types::kFloat);
+    processed_tracks_dcax = processed_tracks_branch->NewVariable("dcax", FLOAT);
+    processed_tracks_vtxx = processed_tracks_branch->NewVariable("vtx_x", FLOAT);
 
     NewBranch("test_event_header", AnalysisTree::DetType::kEventHeader);
     test_event_header = GetOutBranch("test_event_header");

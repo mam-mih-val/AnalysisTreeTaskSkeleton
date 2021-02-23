@@ -81,11 +81,17 @@ class UserFillTask : public UserTask, public AnalysisTree::FillTask {
   inline ATI2::Branch *GetInBranch(const std::string &name) const { return branches_in_.at(name).get(); }
   inline ATI2::Branch *GetOutBranch(const std::string &name) const { return branches_out_.at(name).get(); }
   ATI2::Variable GetVar(const std::string &name) const;
+
+  constexpr static AnalysisTree::Types INTEGER = AnalysisTree::Types::kInteger;
+  constexpr static AnalysisTree::Types FLOAT = AnalysisTree::Types::kFloat;
+  constexpr static AnalysisTree::Types BOOLEAN = AnalysisTree::Types::kBool;
  private:
   void ATI2_Load(std::map<std::string, void *> &map);
   void ATI2_Finish();
   std::map<std::string, std::unique_ptr<ATI2::Branch>> branches_in_;
   std::map<std::string, std::unique_ptr<ATI2::Branch>> branches_out_;
+
+
 
   static std::pair<std::string, std::string> ParseVarName(const std::string &variable_name);
 

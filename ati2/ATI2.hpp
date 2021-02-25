@@ -8,6 +8,8 @@
 #include <cassert>
 #include <memory>
 
+#include <TTree.h>
+
 #include <AnalysisTree/BranchConfig.hpp>
 #include <AnalysisTree/Configuration.hpp>
 #include <AnalysisTree/Detector.hpp>

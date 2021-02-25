@@ -5,6 +5,9 @@
 #ifndef ATTASKSKELETON_AT_TASK_ATI2_HPP_
 #define ATTASKSKELETON_AT_TASK_ATI2_HPP_
 
+#include <cassert>
+#include <memory>
+
 #include <AnalysisTree/BranchConfig.hpp>
 #include <AnalysisTree/Configuration.hpp>
 #include <AnalysisTree/Detector.hpp>

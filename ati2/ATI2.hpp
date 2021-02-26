@@ -9,6 +9,7 @@
 #include <memory>
 #include <utility>
 #include <tuple>
+#include <functional>
 
 #include <TTree.h>
 #include <AnalysisTree/BranchConfig.hpp>
@@ -206,6 +207,11 @@ struct Branch {
     return GetVarsImpl(std::array<std::string, sizeof...(Args)>{{std::string(field_name)...}},
                        std::make_index_sequence<sizeof...(Args)>());
   }
+  /**
+   * @brief Initializes ATI2::Variable objects
+   * @param vars - vector of pairs with name and reference to the ATI2::Variable object
+   */
+  void UseFields(std::vector<std::pair<std::string, std::reference_wrapper<Variable>>> && vars);
   bool HasField(const std::string &field_name) const;
   std::vector<std::string> GetFieldNames() const;
 

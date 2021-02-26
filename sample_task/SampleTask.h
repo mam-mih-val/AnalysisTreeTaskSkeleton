@@ -66,8 +66,11 @@ public:
 
     NewBranch("test_event_header", EVENT_HEADER);
     test_event_header = GetOutBranch("test_event_header");
-    std::tie(test_event_header_vtx_x, test_event_header_vtx_y, test_event_header_vtx_z) =
-        test_event_header->GetVars("vtx_x", "vtx_y", "vtx_z");
+    test_event_header->UseFields({
+                                     {"vtx_x", test_event_header_vtx_x},
+                                     {"vtx_y", test_event_header_vtx_y},
+                                     {"vtx_z", test_event_header_vtx_z}
+                                 });
     rec_event_header = GetInBranch("RecEventHeader");
 
     test_event_header->Freeze(); /* No more structural changes */

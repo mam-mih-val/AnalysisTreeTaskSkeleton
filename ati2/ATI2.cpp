@@ -209,6 +209,11 @@ void Branch::CreateMapping(Branch *other) {
   }
   copy_fields_mapping.emplace(other, std::move(fields_mapping));
 }
+void Branch::UseFields(std::vector<std::pair<std::string, std::reference_wrapper<Variable>>> &&vars) {
+  for (auto &element : vars) {
+    element.second.get() = GetFieldVar(element.first);
+  }
+}
 
 void BranchChannel::UpdateChannel(size_t new_channel) {
   i_channel = new_channel;

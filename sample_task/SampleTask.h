@@ -66,7 +66,8 @@ public:
 
     NewBranch("test_event_header", EVENT_HEADER);
     test_event_header = GetOutBranch("test_event_header");
-    test_event_header_vtx_x = test_event_header->GetFieldVar("vtx_x");
+    std::tie(test_event_header_vtx_x, test_event_header_vtx_y, test_event_header_vtx_z) =
+        test_event_header->GetVars("vtx_x", "vtx_y", "vtx_z");
     rec_event_header = GetInBranch("RecEventHeader");
 
     test_event_header->Freeze(); /* No more structural changes */
@@ -121,6 +122,8 @@ private:
   ATI2::Branch *test_event_header{nullptr};
 
   ATI2::Variable test_event_header_vtx_x;
+  ATI2::Variable test_event_header_vtx_y;
+  ATI2::Variable test_event_header_vtx_z;
   ATI2::Variable vtxtracks_dca_x;
   ATI2::Branch *processed_tracks_branch;
   ATI2::Variable processed_tracks_dcax;

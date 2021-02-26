@@ -7,14 +7,14 @@
 
 #include <cassert>
 #include <memory>
+#include <utility>
+#include <tuple>
 
 #include <TTree.h>
-
 #include <AnalysisTree/BranchConfig.hpp>
 #include <AnalysisTree/Configuration.hpp>
 #include <AnalysisTree/Detector.hpp>
 #include <AnalysisTree/EventHeader.hpp>
-#include <utility>
 
 namespace ATI2 {
 
@@ -195,6 +195,17 @@ struct Branch {
   void ConnectOutputTree(TTree *tree);
 
   Variable GetFieldVar(const std::string &field_name);
+  /**
+   * @brief Gets variables according to variable names specified in the arguments.
+   * Returns tuple of variables which is suitable for unpacking with std::tie()
+   * @tparam Args
+   * @param field_name variable names convertible to std::string
+   * @return tuple of variables
+   */
+  template<typename ... Args> auto GetVars(Args ... field_name) {
+    return GetVarsImpl(std::array<std::string, sizeof...(Args)>{{std::string(field_name)...}},
+                       std::make_index_sequence<sizeof...(Args)>());
+  }
   bool HasField(const std::string &field_name) const;
   std::vector<std::string> GetFieldNames() const;
 
@@ -278,6 +289,12 @@ struct Branch {
     /* unreachable */
     __builtin_unreachable();
     assert(false);
+  }
+
+ private:
+  template<size_t ... Idx>
+  auto GetVarsImpl(std::array<std::string, sizeof ... (Idx)> && field_names, std::index_sequence<Idx...>) {
+    return std::make_tuple(GetFieldVar(field_names[Idx])...);
   }
 
 };
